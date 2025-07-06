@@ -1,6 +1,6 @@
+import * as path from 'node:path'
 import * as vscode from 'vscode'
-import * as path from 'path'
-import * as logger from '../utils/logger'
+import { logger } from '../utils'
 
 /**
  * 获取符号定义位置
@@ -19,17 +19,17 @@ export async function getDefinition(uri: string, line: number, character: number
 
     const position = new vscode.Position(line, character)
 
-    logger.debug(`获取定义: ${uri} 行:${line} 列:${character}`)
+    logger.info(`获取定义: ${uri} 行:${line} 列:${character}`)
 
     // 调用VSCode API获取定义位置
     const definitions = await vscode.commands.executeCommand<vscode.Location[]>(
       'vscode.executeDefinitionProvider',
       document.uri,
-      position
+      position,
     )
 
     if (!definitions || definitions.length === 0) {
-      logger.debug('没有找到定义')
+      logger.warn('没有找到定义')
       return null
     }
 
@@ -47,12 +47,12 @@ export async function getDefinition(uri: string, line: number, character: number
     const symbolName = defDocument
       ? defDocument.getText(new vscode.Range(
           defRange.start,
-          defRange.end
+          defRange.end,
         ))
       : word
 
     // 提取文件名和相对路径
-    let fileName = path.basename(definition.uri.fsPath)
+    const fileName = path.basename(definition.uri.fsPath)
     let workspaceRelativePath = ''
 
     if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
@@ -68,12 +68,12 @@ export async function getDefinition(uri: string, line: number, character: number
       range: {
         start: {
           line: defRange.start.line,
-          character: defRange.start.character
+          character: defRange.start.character,
         },
         end: {
           line: defRange.end.line,
-          character: defRange.end.character
-        }
+          character: defRange.end.character,
+        },
       },
       fileName,
       workspaceRelativePath,
@@ -83,16 +83,17 @@ export async function getDefinition(uri: string, line: number, character: number
         range: {
           start: {
             line: def.range.start.line,
-            character: def.range.start.character
+            character: def.range.start.character,
           },
           end: {
             line: def.range.end.line,
-            character: def.range.end.character
-          }
-        }
-      }))
+            character: def.range.end.character,
+          },
+        },
+      })),
     }
-  } catch (error) {
+  }
+  catch (error) {
     logger.error('获取定义失败', error)
     throw error
   }
@@ -115,7 +116,8 @@ async function getDocument(uri: string): Promise<vscode.TextDocument | undefined
 
     // 如果未找到，则尝试从文件系统加载
     return await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
-  } catch (error) {
+  }
+  catch (error) {
     logger.error(`获取文档失败: ${uri}`, error)
     return undefined
   }

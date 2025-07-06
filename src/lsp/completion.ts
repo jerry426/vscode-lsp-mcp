@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import * as logger from '../utils/logger'
+import { logger } from '../utils'
 
 /**
  * 获取代码补全建议
@@ -18,7 +18,7 @@ export async function getCompletions(uri: string, line: number, character: numbe
 
     const position = new vscode.Position(line, character)
 
-    logger.debug(`获取代码补全: ${uri} 行:${line} 列:${character}`)
+    logger.info(`获取代码补全: ${uri} 行:${line} 列:${character}`)
 
     // 调用VSCode API获取代码补全
     const completionList = await vscode.commands.executeCommand<vscode.CompletionList>(
@@ -26,16 +26,16 @@ export async function getCompletions(uri: string, line: number, character: numbe
       document.uri,
       position,
       undefined,
-      50 // 限制数量，避免返回过多
+      50, // 限制数量，避免返回过多
     )
 
     if (!completionList || completionList.items.length === 0) {
-      logger.debug('没有找到补全建议')
+      logger.warn('没有找到补全建议')
       return { items: [] }
     }
 
     // 处理补全项
-    const items = completionList.items.map(item => {
+    const items = completionList.items.map((item) => {
       return {
         label: item.label,
         kind: completionKindToString(item.kind),
@@ -44,16 +44,17 @@ export async function getCompletions(uri: string, line: number, character: numbe
         documentation: getCompletionDocumentation(item),
         sortText: item.sortText || '',
         filterText: item.filterText || '',
-        preselect: item.preselect || false
+        preselect: item.preselect || false,
       }
     })
 
     // 构建最终结果
     return {
       isIncomplete: completionList.isIncomplete,
-      items
+      items,
     }
-  } catch (error) {
+  }
+  catch (error) {
     logger.error('获取代码补全失败', error)
     throw error
   }
@@ -111,7 +112,7 @@ function completionKindToString(kind?: vscode.CompletionItemKind): string {
     [vscode.CompletionItemKind.Struct]: '结构体',
     [vscode.CompletionItemKind.Event]: '事件',
     [vscode.CompletionItemKind.Operator]: '操作符',
-    [vscode.CompletionItemKind.TypeParameter]: '类型参数'
+    [vscode.CompletionItemKind.TypeParameter]: '类型参数',
   }
 
   return kindMap[kind] || '未知'
@@ -133,7 +134,8 @@ async function getDocument(uri: string): Promise<vscode.TextDocument | undefined
 
     // 如果未找到，则尝试从文件系统加载
     return await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
-  } catch (error) {
+  }
+  catch (error) {
     logger.error(`获取文档失败: ${uri}`, error)
     return undefined
   }

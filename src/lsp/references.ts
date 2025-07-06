@@ -1,6 +1,6 @@
+import * as path from 'node:path'
 import * as vscode from 'vscode'
-import * as path from 'path'
-import * as logger from '../utils/logger'
+import { logger } from '../utils'
 
 /**
  * 获取符号的引用位置
@@ -15,7 +15,6 @@ export async function getReferences(
   uri: string,
   line: number,
   character: number,
-  includeDeclaration: boolean = true
 ): Promise<any> {
   try {
     const document = await getDocument(uri)
@@ -25,17 +24,17 @@ export async function getReferences(
 
     const position = new vscode.Position(line, character)
 
-    logger.debug(`获取引用: ${uri} 行:${line} 列:${character}`)
+    logger.info(`获取引用: ${uri} 行:${line} 列:${character}`)
 
     // 调用VSCode API获取引用位置
     const references = await vscode.commands.executeCommand<vscode.Location[]>(
       'vscode.executeReferenceProvider',
       document.uri,
-      position
+      position,
     )
 
     if (!references || references.length === 0) {
-      logger.debug('没有找到引用')
+      logger.warn('没有找到引用')
       return { references: [] }
     }
 
@@ -44,12 +43,12 @@ export async function getReferences(
     const word = wordRange ? document.getText(wordRange) : ''
 
     // 处理引用位置列表
-    const result = references.map(ref => {
+    const result = references.map((ref) => {
       const refUri = ref.uri.toString()
       const refRange = ref.range
 
       // 提取文件名和相对路径
-      let fileName = path.basename(ref.uri.fsPath)
+      const fileName = path.basename(ref.uri.fsPath)
       let workspaceRelativePath = ''
 
       if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
@@ -66,13 +65,13 @@ export async function getReferences(
         range: {
           start: {
             line: refRange.start.line,
-            character: refRange.start.character
+            character: refRange.start.character,
           },
           end: {
             line: refRange.end.line,
-            character: refRange.end.character
-          }
-        }
+            character: refRange.end.character,
+          },
+        },
       }
     })
 
@@ -91,9 +90,10 @@ export async function getReferences(
       symbolName: word,
       count: references.length,
       references: result,
-      referencesByFile
+      referencesByFile,
     }
-  } catch (error) {
+  }
+  catch (error) {
     logger.error('获取引用失败', error)
     throw error
   }
@@ -116,7 +116,8 @@ async function getDocument(uri: string): Promise<vscode.TextDocument | undefined
 
     // 如果未找到，则尝试从文件系统加载
     return await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
-  } catch (error) {
+  }
+  catch (error) {
     logger.error(`获取文档失败: ${uri}`, error)
     return undefined
   }

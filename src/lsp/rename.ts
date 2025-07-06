@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import * as logger from '../utils/logger'
+import { logger } from '../utils'
 
 /**
  * 执行符号重命名
@@ -19,13 +19,13 @@ export async function rename(uri: string, line: number, character: number, newNa
 
     const position = new vscode.Position(line, character)
 
-    logger.debug(`执行重命名: ${uri} 行:${line} 列:${character} 新名称:${newName}`)
+    logger.info(`执行重命名: ${uri} 行:${line} 列:${character} 新名称:${newName}`)
 
     // 先检查重命名是否可行
     const prepareResult = await vscode.commands.executeCommand<vscode.Range | { range: vscode.Range, placeholder: string }>(
       'vscode.prepareRename',
       document.uri,
-      position
+      position,
     )
 
     if (!prepareResult) {
@@ -36,7 +36,8 @@ export async function rename(uri: string, line: number, character: number, newNa
     let symbolName = ''
     if ('placeholder' in prepareResult) {
       symbolName = prepareResult.placeholder
-    } else {
+    }
+    else {
       const range = prepareResult
       symbolName = document.getText(range)
     }
@@ -46,7 +47,7 @@ export async function rename(uri: string, line: number, character: number, newNa
       'vscode.executeDocumentRenameProvider',
       document.uri,
       position,
-      newName
+      newName,
     )
 
     if (!workspaceEdit || !workspaceEdit.entries || workspaceEdit.entries().length === 0) {
@@ -54,7 +55,7 @@ export async function rename(uri: string, line: number, character: number, newNa
         success: false,
         message: '重命名操作未返回任何编辑',
         oldName: symbolName,
-        newName: newName
+        newName,
       }
     }
 
@@ -65,20 +66,20 @@ export async function rename(uri: string, line: number, character: number, newNa
 
     for (const [uri, edits] of workspaceEdit.entries()) {
       fileCount.add(uri.toString())
-      const fileChanges = edits.map(edit => {
+      const fileChanges = edits.map((edit) => {
         editCount++
         return {
           range: {
             start: {
               line: edit.range.start.line,
-              character: edit.range.start.character
+              character: edit.range.start.character,
             },
             end: {
               line: edit.range.end.line,
-              character: edit.range.end.character
-            }
+              character: edit.range.end.character,
+            },
           },
-          newText: edit.newText
+          newText: edit.newText,
         }
       })
       changes[uri.toString()] = fileChanges
@@ -88,18 +89,19 @@ export async function rename(uri: string, line: number, character: number, newNa
     return {
       success: true,
       oldName: symbolName,
-      newName: newName,
-      changes: changes,
+      newName,
+      changes,
       fileCount: fileCount.size,
-      editCount: editCount
+      editCount,
     }
-  } catch (error) {
+  }
+  catch (error) {
     logger.error('执行重命名失败', error)
     return {
       success: false,
       message: error instanceof Error ? error.message : '执行重命名失败',
       oldName: '',
-      newName: newName
+      newName,
     }
   }
 }
@@ -121,7 +123,8 @@ async function getDocument(uri: string): Promise<vscode.TextDocument | undefined
 
     // 如果未找到，则尝试从文件系统加载
     return await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
-  } catch (error) {
+  }
+  catch (error) {
     logger.error(`获取文档失败: ${uri}`, error)
     return undefined
   }

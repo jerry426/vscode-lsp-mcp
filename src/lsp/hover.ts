@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import * as logger from '../utils/logger'
+import { logger } from '../utils'
 
 /**
  * 获取指定位置的悬停信息
@@ -18,17 +18,17 @@ export async function getHover(uri: string, line: number, character: number): Pr
 
     const position = new vscode.Position(line, character)
 
-    logger.debug(`获取悬停信息: ${uri} 行:${line} 列:${character}`)
+    logger.info(`获取悬停信息: ${uri} 行:${line} 列:${character}`)
 
     // 调用VSCode API获取悬停信息
     const hoverResults = await vscode.commands.executeCommand<vscode.Hover[]>(
       'vscode.executeHoverProvider',
       document.uri,
-      position
+      position,
     )
 
     if (!hoverResults || hoverResults.length === 0) {
-      logger.debug('没有找到悬停信息')
+      logger.warn('没有找到悬停信息')
       return null
     }
 
@@ -36,22 +36,25 @@ export async function getHover(uri: string, line: number, character: number): Pr
     const hover = hoverResults[0]
 
     // 提取内容
-    let contents: string[] = []
+    const contents: string[] = []
 
     if (hover.contents) {
       if (Array.isArray(hover.contents)) {
         for (const content of hover.contents) {
           if (typeof content === 'string') {
             contents.push(content)
-          } else if (content instanceof vscode.MarkdownString) {
+          }
+          else if (content instanceof vscode.MarkdownString) {
             contents.push(content.value)
           }
         }
-        // @ts-ignore
-      } else if (hover.contents instanceof vscode.MarkdownString) {
-        // @ts-ignore
+      }
+      // @ts-expect-error: hover.contents is not typed
+      else if (hover.contents instanceof vscode.MarkdownString) {
+        // @ts-expect-error: hover.contents is not typed
         contents.push(hover.contents.value)
-      } else if (typeof hover.contents === 'string') {
+      }
+      else if (typeof hover.contents === 'string') {
         contents.push(hover.contents)
       }
     }
@@ -69,15 +72,17 @@ export async function getHover(uri: string, line: number, character: number): Pr
       if (varMatch) {
         symbolType = varMatch[1]
         symbolName = varMatch[2].trim()
-      } else {
+      }
+      else {
         // 尝试提取类/接口/函数等
         const typeMatch = firstLine.match(/^(class|interface|enum|type|function|namespace|module)\s+([^\s<(:]+)/)
         if (typeMatch) {
           symbolType = typeMatch[1]
           symbolName = typeMatch[2]
-        } else {
+        }
+        else {
           // 尝试提取任何看起来像符号的内容
-          const anySymbol = firstLine.match(/([a-zA-Z0-9_]+)(?:\s*:|\s*\(|\s*{)/)
+          const anySymbol = firstLine.match(/(\w+)(?:\s*:|\s*\(|\s*\{)/)
           if (anySymbol) {
             symbolName = anySymbol[1]
           }
@@ -88,20 +93,23 @@ export async function getHover(uri: string, line: number, character: number): Pr
     // 构建响应
     return {
       contents: contents.join('\n'),
-      range: hover.range ? {
-        start: {
-          line: hover.range.start.line,
-          character: hover.range.start.character
-        },
-        end: {
-          line: hover.range.end.line,
-          character: hover.range.end.character
-        }
-      } : undefined,
+      range: hover.range
+        ? {
+            start: {
+              line: hover.range.start.line,
+              character: hover.range.start.character,
+            },
+            end: {
+              line: hover.range.end.line,
+              character: hover.range.end.character,
+            },
+          }
+        : undefined,
       symbolName,
-      symbolType
+      symbolType,
     }
-  } catch (error) {
+  }
+  catch (error) {
     logger.error('获取悬停信息失败', error)
     throw error
   }
@@ -124,7 +132,8 @@ async function getDocument(uri: string): Promise<vscode.TextDocument | undefined
 
     // 如果未找到，则尝试从文件系统加载
     return await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
-  } catch (error) {
+  }
+  catch (error) {
     logger.error(`获取文档失败: ${uri}`, error)
     return undefined
   }
