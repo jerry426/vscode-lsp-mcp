@@ -1,8 +1,8 @@
 import { defineExtension } from 'reactive-vscode'
-import { window } from 'vscode'
+import { testWithCMD } from './lsp/testWithCMD'
 
-const { activate, deactivate } = defineExtension((context) => {
-  window.showInformationMessage('Hello')
+const { activate, deactivate } = defineExtension(async (context) => {
+  testWithCMD(context)
 })
 
 export { activate, deactivate }

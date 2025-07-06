@@ -37,7 +37,28 @@
     "onStartupFinished"
   ],
   "contributes": {
-    "commands": [],
+    "commands": [
+      {
+        "command": "ext-name.getHover",
+        "title": "LSP Test: Get Hover"
+      },
+      {
+        "command": "ext-name.getDefinition",
+        "title": "LSP Test: Get Definition"
+      },
+      {
+        "command": "ext-name.getCompletions",
+        "title": "LSP Test: Get Completions"
+      },
+      {
+        "command": "ext-name.getReferences",
+        "title": "LSP Test: Get References"
+      },
+      {
+        "command": "ext-name.rename",
+        "title": "LSP Test: Rename Symbol"
+      }
+    ],
     "configuration": {
       "type": "object",
       "title": "ext-name",
