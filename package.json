@@ -81,6 +81,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^4.2.1",
     "@antfu/ni": "^23.3.1",
+    "@types/express": "^5.0.3",
     "@types/node": "^22.13.4",
     "@types/vscode": "^1.97.0",
     "@vscode/vsce": "^3.2.2",
@@ -99,5 +100,10 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.0",
+    "express": "^5.1.0",
+    "zod": "^3.25.74"
   }
 }

@@ -15,7 +15,13 @@
 
 <!-- commands -->
 
-**No data**
+| Command                   | Title                     |
+| ------------------------- | ------------------------- |
+| `ext-name.getHover`       | LSP Test: Get Hover       |
+| `ext-name.getDefinition`  | LSP Test: Get Definition  |
+| `ext-name.getCompletions` | LSP Test: Get Completions |
+| `ext-name.getReferences`  | LSP Test: Get References  |
+| `ext-name.rename`         | LSP Test: Rename Symbol   |
 
 <!-- commands -->
 
