@@ -3,12 +3,21 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import express from 'express'
-import { window } from 'vscode'
+import { window, workspace } from 'vscode'
+import { addLspTools } from './tools'
 
 // Map to store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
 
 export function startMcp() {
+  const config = workspace.getConfiguration('starter-vscode-main')
+  const isMcpEnabled = config.get('mcp.enabled', false)
+  const mcpPort = config.get('mcp.port', 9527)
+
+  if (!isMcpEnabled) {
+    window.showInformationMessage('LSP MCP server is disabled by configuration.')
+    return
+  }
   const app = express()
   app.use(express.json())
 
@@ -45,7 +54,8 @@ export function startMcp() {
         version: '1.0.0',
       })
 
-      // ... set up server resources, tools, and prompts ...
+      // Add LSP tools to the server
+      addLspTools(server)
 
       // Connect to the MCP server
       await server.connect(transport)
@@ -70,8 +80,8 @@ export function startMcp() {
   // Handle GET requests for server-to-client notifications via SSE
   app.get('/mcp', handleSessionRequest)
 
-  app.listen(3000)
-  window.showInformationMessage('LSP MCP server started on port 3000')
+  app.listen(mcpPort)
+  window.showInformationMessage(`LSP MCP server started on port ${mcpPort}`)
 }
 
 // Reusable handler for GET and DELETE requests

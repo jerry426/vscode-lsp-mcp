@@ -56,13 +56,23 @@
       },
       {
         "command": "ext-name.rename",
-        "title": "LSP Test: Rename Symbol"
+        "title": "LSP Test: Rename"
       }
     ],
     "configuration": {
-      "type": "object",
-      "title": "ext-name",
-      "properties": {}
+      "title": "LSP MCP Server Configuration",
+      "properties": {
+        "starter-vscode-main.mcp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable the LSP MCP server."
+        },
+        "starter-vscode-main.mcp.port": {
+          "type": "number",
+          "default": 9527,
+          "description": "Port for the LSP MCP server."
+        }
+      }
     }
   },
   "scripts": {
@@ -77,6 +87,11 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit",
     "release": "bumpp && nr publish"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.0",
+    "express": "^5.1.0",
+    "zod": "^3.25.74"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.2.1",
@@ -100,10 +115,5 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.15.0",
-    "express": "^5.1.0",
-    "zod": "^3.25.74"
   }
 }
