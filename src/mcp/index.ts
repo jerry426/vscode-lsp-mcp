@@ -80,8 +80,12 @@ export function startMcp() {
   // Handle GET requests for server-to-client notifications via SSE
   app.get('/mcp', handleSessionRequest)
 
-  app.listen(mcpPort)
-  window.showInformationMessage(`LSP MCP server started on port ${mcpPort}`)
+  app.listen(mcpPort, () => {
+    window.showInformationMessage(`LSP MCP server started on port ${mcpPort}`)
+
+    console.info(`[MCP Server] Ready for inspection.`)
+    console.info(`[MCP Server]   - Inspector: npx @modelcontextprotocol/inspector --url http://localhost:${mcpPort}/mcp`)
+  })
 }
 
 // Reusable handler for GET and DELETE requests

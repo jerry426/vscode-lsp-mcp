@@ -33,7 +33,7 @@ export function testWithCMD(context: ExtensionContext) {
       logger.info('Command: getHover')
       const result = await getHover(context.uri, context.line, context.character)
       logger.info('Hover Result:', result)
-      window.showInformationMessage(`Hover: ${result?.contents || 'Not found'}`)
+      window.showInformationMessage(`Hover: ${result?.map(r => r.contents).join('\n') || 'Not found'}`)
     }),
 
     commands.registerCommand('ext-name.getDefinition', async () => {
@@ -44,7 +44,7 @@ export function testWithCMD(context: ExtensionContext) {
       logger.info('Command: getDefinition')
       const result = await getDefinition(context.uri, context.line, context.character)
       logger.info('Definition Result:', result)
-      window.showInformationMessage(`Definition: ${result?.uri || 'Not found'} at line ${result?.range.start.line}`)
+      window.showInformationMessage(`Definition: ${result?.map(r => r.uri).join('\n') || 'Not found'} at line ${result?.map(r => r.range.start.line).join('\n')}`)
     }),
 
     commands.registerCommand('ext-name.getCompletions', async () => {
@@ -56,8 +56,8 @@ export function testWithCMD(context: ExtensionContext) {
       const result = await getCompletions(context.uri, context.line, context.character)
       logger.info('Completions Result:', result)
       // Display first 5 completion items for brevity
-      const topItems = result.items.slice(0, 5).map((item: any) => item.label).join(', ')
-      window.showInformationMessage(`Completions: ${topItems}... (${result.items.length} total)`)
+      const topItems = result?.items.slice(0, 5).map((item: any) => item.label).join(', ')
+      window.showInformationMessage(`Completions: ${topItems}... (${result?.items.length || 0} total)`)
     }),
 
     commands.registerCommand('ext-name.getReferences', async () => {
@@ -68,7 +68,7 @@ export function testWithCMD(context: ExtensionContext) {
       logger.info('Command: getReferences')
       const result = await getReferences(context.uri, context.line, context.character)
       logger.info('References Result:', result)
-      window.showInformationMessage(`Found ${result?.count || 0} references for ${result?.symbolName || 'symbol'}.`)
+      window.showInformationMessage(`Found ${result?.length || 0} references.`)
     }),
 
     commands.registerCommand('ext-name.rename', async () => {
@@ -86,36 +86,15 @@ export function testWithCMD(context: ExtensionContext) {
       const result = await rename(context.uri, context.line, context.character, newName)
       logger.info('Rename Result:', result)
 
-      if (result.success) {
-        window.showInformationMessage(`Renamed ${result.oldName} to ${result.newName} in ${result.fileCount} files.`)
-        // Note: The rename operation from the API does not automatically apply the edits.
-        // You would typically use `vscode.workspace.applyEdit(workspaceEdit)` to apply the changes.
-        // For this test setup, we just log the result.
-        const apply = await window.showInformationMessage(
-          `Rename would make ${result.editCount} edits in ${result.fileCount} files. Apply changes?`,
+      if (result) {
+        await window.showInformationMessage(
+          result.toString(),
           { modal: true },
           'Apply',
         )
-
-        if (apply === 'Apply') {
-          const workspaceEdit = new (await import('vscode')).WorkspaceEdit()
-          for (const [uri, edits] of Object.entries(result.changes as Record<string, any[]>)) {
-            const ranges = await Promise.all(edits.map(async e => new (await import('vscode')).Range(e.range.start.line, e.range.start.character, e.range.end.line, e.range.end.character)))
-
-            workspaceEdit.set(
-              (await import('vscode')).Uri.parse(uri),
-              edits.map((e, i) => ({
-                range: ranges[i],
-                newText: e.newText,
-              })),
-            )
-          }
-          await workspace.applyEdit(workspaceEdit)
-          window.showInformationMessage('Changes applied.')
-        }
       }
       else {
-        window.showErrorMessage(`Rename failed: ${result.message}`)
+        window.showErrorMessage(`Rename failed.`)
       }
     }),
   )
