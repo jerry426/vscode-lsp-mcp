@@ -1,4 +1,4 @@
-# lsp-mcp
+# VSCode LSP MCP
 
 ## Configurations
 
@@ -6,8 +6,8 @@
 
 | Key                               | Description                           | Type      | Default |
 | --------------------------------- | ------------------------------------- | --------- | ------- |
-| `starter-vscode-main.mcp.enabled` | Enable or disable the LSP MCP server. | `boolean` | `true`  |
-| `starter-vscode-main.mcp.port`    | Port for the LSP MCP server.          | `number`  | `9527`  |
+| `lsp-mcp.enabled` | Enable or disable the LSP MCP server. | `boolean` | `true`  |
+| `lsp-mcp.port`    | Port for the LSP MCP server.          | `number`  | `9527`  |
 
 <!-- configs -->
 
@@ -49,10 +49,10 @@ This extension can start an MCP (Model Context Protocol) server to expose its LS
 
 You can configure the MCP server in your VSCode settings (`settings.json`):
 
-- `starter-vscode-main.mcp.enabled`: Enable or disable the LSP MCP server.
+- `lsp-mcp.enabled`: Enable or disable the LSP MCP server.
   - Type: `boolean`
   - Default: `true`
-- `starter-vscode-main.mcp.port`: Port for the LSP MCP server.
+- `lsp-mcp.port`: Port for the LSP MCP server.
   - Type: `number`
   - Default: `9527`
 

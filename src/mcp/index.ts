@@ -10,9 +10,9 @@ import { addLspTools } from './tools'
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {}
 
 export function startMcp() {
-  const config = workspace.getConfiguration('starter-vscode-main')
-  const isMcpEnabled = config.get('mcp.enabled', false)
-  const mcpPort = config.get('mcp.port', 9527)
+  const config = workspace.getConfiguration('lsp-mcp')
+  const isMcpEnabled = config.get('enabled', true)
+  const mcpPort = config.get('port', 9527)
 
   if (!isMcpEnabled) {
     window.showInformationMessage('LSP MCP server is disabled by configuration.')
