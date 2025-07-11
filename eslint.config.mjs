@@ -62,6 +62,7 @@ export default antfu({
   jsonc: false,
   regexp: false,
   typescript: true,
+  markdown: false,
 
   ignores: [
     'dist',

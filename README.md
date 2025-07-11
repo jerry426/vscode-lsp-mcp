@@ -1,74 +1,80 @@
-# VSCode LSP MCP
+# VSCode LSP MCP 🚀
 
-## Configurations
+<p align="center">
+  <img src="res/icon.webp" width="128" height="128" alt="LSP MCP Icon">
+</p>
+
+<p align="center">
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow.svg" />
+  <img alt="github" src="https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white" />
+</p>
+
+**English** | [中文](./README.zh-CN.md)
+
+## 🔍 Overview
+
+VSCode LSP MCP is a Visual Studio Code extension that exposes Language Server Protocol (LSP) features through the Model Context Protocol (MCP). This allows AI assistants and external tools to utilize VSCode's powerful language intelligence capabilities without direct integration.
+
+![demo](./docAssets/demo.webp)
+
+### 🌟 Why This Extension?
+
+Large language models like Claude and Cursor struggle to understand your codebase accurately because:
+
+- They rely on regex patterns to find symbols, leading to false matches
+- They can't analyze import/export relationships properly
+- They don't understand type hierarchies or inheritance
+- They have limited code navigation capabilities
+
+This extension bridges that gap, providing AI tools with the same code intelligence that VSCode uses internally!
+
+## ⚙️ Features
+
+- 🔄 **LSP Bridge**: Converts LSP features into MCP tools
+- 🔌 **Multi-Instance Support**: Automatically handles port conflicts for multiple VSCode windows
+- 🧠 **Rich Code Context**: Provides accurate symbol information through LSP
+
+## 🛠️ Exposed MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `get_hover` | Get hover information for symbols |
+| `get_definition` | Find symbol definitions |
+| `get_completions` | Get intelligent code completions |
+| `get_references` | Find all references to a symbol |
+| `rename_symbol` | Rename symbols across files |
+
+## 📋 Configuration
 
 <!-- configs -->
 
-| Key                               | Description                           | Type      | Default |
-| --------------------------------- | ------------------------------------- | --------- | ------- |
-| `lsp-mcp.enabled` | Enable or disable the LSP MCP server. | `boolean` | `true`  |
-| `lsp-mcp.port`    | Port for the LSP MCP server.          | `number`  | `9527`  |
+| Key                  | Description                                                              | Type      | Default |
+| -------------------- | ------------------------------------------------------------------------ | --------- | ------- |
+| `lsp-mcp.enabled`    | Enable or disable the LSP MCP server.                                    | `boolean` | `true`  |
+| `lsp-mcp.port`       | Port for the LSP MCP server.                                             | `number`  | `9527`  |
+| `lsp-mcp.maxRetries` | Maximum number of port retry attempts when the default port is occupied. | `number`  | `10`    |
 
 <!-- configs -->
 
-## Commands
+## 🔗 Integration with AI Tools
 
-<!-- commands -->
+### Cursor
 
-| Command                   | Title                     |
-| ------------------------- | ------------------------- |
-| `ext-name.getHover`       | LSP Test: Get Hover       |
-| `ext-name.getDefinition`  | LSP Test: Get Definition  |
-| `ext-name.getCompletions` | LSP Test: Get Completions |
-| `ext-name.getReferences`  | LSP Test: Get References  |
-| `ext-name.rename`         | LSP Test: Rename          |
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.png)](https://cursor.com/install-mcp?name=lsp&config=JTdCJTIydXJsJTIyJTNBJTIyaHR0cCUzQSUyRiUyRjEyNy4wLjAuMSUzQTk1MjclMkZtY3AlMjIlN0Q%3D)
 
-<!-- commands -->
+```json
+{
+  "mcpServers": {
+    "lsp": {
+      "url": "http://127.0.0.1:9527/mcp"
+    }
+  }
+}
+```
 
-## Features
+## 💻 Development
 
-- Basic extension structure
-- LSP functionality testing commands
-- Integrated MCP server to expose LSP features
-
-## LSP Functions Test
-
-This extension provides several commands to test LSP functionalities. You can access them from the command palette (Ctrl+Shift+P):
-
-- `LSP Test: Get Hover`
-- `LSP Test: Get Definition`
-- `LSP Test: Get Completions`
-- `LSP Test: Get References`
-- `LSP Test: Rename`
-
-## MCP Server
-
-This extension can start an MCP (Model Context Protocol) server to expose its LSP capabilities to external clients.
-
-### Configuration
-
-You can configure the MCP server in your VSCode settings (`settings.json`):
-
-- `lsp-mcp.enabled`: Enable or disable the LSP MCP server.
-  - Type: `boolean`
-  - Default: `true`
-- `lsp-mcp.port`: Port for the LSP MCP server.
-  - Type: `number`
-  - Default: `9527`
-
-### Exposed Tools
-
-The following tools are exposed via the MCP server:
-
-- `lsp/getHover`: Get hover information.
-- `lsp/getDefinition`: Get definition location.
-- `lsp/getCompletions`: Get completion suggestions.
-- `lsp/getReferences`: Get symbol references.
-- `lsp/rename`: Rename a symbol.
-Each tool requires parameters like `uri`, `line`, and `character`. The `rename` tool also requires `newName`.
-
-## Development
-
-- Press `F5` to open a new window with your extension loaded.
-- Open a file and run the commands from the command palette.
-- Check the debug console for logs.
+- Clone the repository
+- Run `pnpm install`
+- Run `pnpm run update` to generate metadata
+- Press `F5` to start debugging

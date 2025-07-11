@@ -13,6 +13,7 @@ export function startMcp() {
   const config = workspace.getConfiguration('lsp-mcp')
   const isMcpEnabled = config.get('enabled', true)
   const mcpPort = config.get('port', 9527)
+  const maxRetries = config.get('maxRetries', 10)
 
   if (!isMcpEnabled) {
     window.showInformationMessage('LSP MCP server is disabled by configuration.')
@@ -51,7 +52,7 @@ export function startMcp() {
 
       const server = new McpServer({
         name: 'lsp-server',
-        version: '1.0.0',
+        version: '0.0.1',
       })
 
       // Add LSP tools to the server
@@ -80,12 +81,35 @@ export function startMcp() {
   // Handle GET requests for server-to-client notifications via SSE
   app.get('/mcp', handleSessionRequest)
 
-  app.listen(mcpPort, () => {
-    window.showInformationMessage(`LSP MCP server started on port ${mcpPort}`)
+  // 尝试启动服务器，处理端口冲突
+  startServer(app, mcpPort, maxRetries)
+}
 
-    console.info(`[MCP Server] Ready for inspection.`)
-    console.info(`[MCP Server]   - Inspector: npx @modelcontextprotocol/inspector --url http://localhost:${mcpPort}/mcp`)
-  })
+// 尝试启动服务器，如果端口被占用则尝试其他端口
+function startServer(app: express.Express, initialPort: number, maxRetries: number) {
+  let currentPort = initialPort
+  let retries = 0
+
+  const tryListen = () => {
+    const server = app.listen(currentPort, () => {
+      window.showInformationMessage(`LSP MCP 服务已启动，监听端口 ${currentPort}`)
+    })
+
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE' && retries < maxRetries) {
+        // 端口被占用，尝试下一个端口
+        retries++
+        currentPort++
+        window.showWarningMessage(`端口 ${currentPort - 1} 已被占用，尝试端口 ${currentPort}...`)
+        tryListen()
+      }
+      else {
+        window.showErrorMessage(`无法启动 LSP MCP 服务: ${err.message}`)
+      }
+    })
+  }
+
+  tryListen()
 }
 
 // Reusable handler for GET and DELETE requests

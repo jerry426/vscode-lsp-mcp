@@ -1,5 +1,5 @@
 {
-  "publisher": "antfu",
+  "publisher": "CJL",
   "name": "lsp-mcp",
   "displayName": "LSP MCP",
   "version": "0.0.1",
@@ -7,24 +7,17 @@
   "description": "LSP MCP Server for VSCode",
   "author": "Anthony Fu <anthonyfu117@hotmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/antfu/lsp-mcp#readme",
+  "homepage": "https://github.com/beixiyo/vsc-lsp-mcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/antfu/lsp-mcp"
-  },
-  "bugs": {
-    "url": "https://github.com/antfu/lsp-mcp/issues"
-  },
-  "sponsor": {
-    "url": "https://github.com/sponsors/antfu"
+    "url": "https://github.com/beixiyo/vsc-lsp-mcp"
   },
   "categories": [
     "Other"
   ],
   "main": "./dist/index.js",
-  "icon": "res/icon.png",
+  "icon": "res/icon.webp",
   "files": [
-    "LICENSE.md",
     "dist/*",
     "res/*"
   ],
@@ -47,6 +40,11 @@
           "type": "number",
           "default": 9527,
           "description": "Port for the LSP MCP server."
+        },
+        "lsp-mcp.maxRetries": {
+          "type": "number",
+          "default": 10,
+          "description": "Maximum number of port retry attempts when the default port is occupied."
         }
       }
     }
