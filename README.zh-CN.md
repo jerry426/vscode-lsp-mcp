@@ -72,6 +72,20 @@ VSCode LSP MCP 是一个 Visual Studio Code 扩展，它通过模型上下文协
 }
 ```
 
+### Roo Code
+
+```json
+{
+  "mcpServers": {
+    "lsp": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:9527/mcp",
+      "disabled": false
+    }
+  }
+}
+```
+
 ## 💻 开发
 
 - 克隆仓库

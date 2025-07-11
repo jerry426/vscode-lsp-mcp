@@ -52,7 +52,7 @@ export function startMcp() {
 
       const server = new McpServer({
         name: 'lsp-server',
-        version: '0.0.1',
+        version: '0.0.2',
       })
 
       // Add LSP tools to the server

@@ -72,6 +72,20 @@ This extension bridges that gap, providing AI tools with the same code intellige
 }
 ```
 
+### Roo Code
+
+```json
+{
+  "mcpServers": {
+    "lsp": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:9527/mcp",
+      "disabled": false
+    }
+  }
+}
+```
+
 ## 💻 Development
 
 - Clone the repository
