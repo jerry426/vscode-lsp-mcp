@@ -24,6 +24,15 @@ async function main() {
     define: {
       'process.env.NODE_ENV': watchMode ? '"development"' : '"production"',
     },
+
+    plugins: [
+      {
+        name: 'build-notify',
+        setup(build) {
+          build.onEnd(() => console.log('Build completed'))
+        },
+      },
+    ],
   }
 
   if (watchMode) {
