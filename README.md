@@ -9,12 +9,15 @@
   <img alt="github" src="https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white" />
 </p>
 
-**English** | [中文](./README.zh-CN.md)
+<p align="center">
+  <a href="./README.md">English</a> | <a href="./README.zh-CN.md">中文</a>
+</p>
 
 ## 🔍 Overview
 
 VSCode LSP MCP is a Visual Studio Code extension that exposes Language Server Protocol (LSP) features through the Model Context Protocol (MCP). This allows AI assistants and external tools to utilize VSCode's powerful language intelligence capabilities without direct integration.
 
+![vscode-ext](./docAssets/vsc-ext.webp)
 ![demo](./docAssets/demo.webp)
 
 ### 🌟 Why This Extension?

@@ -9,12 +9,15 @@
   <img alt="github" src="https://img.shields.io/badge/GitHub-181717?logo=github&logoColor=white" />
 </p>
 
-[English](./README.md) | **中文**
+<p align="center">
+  <a href="./README.md">English</a> | <a href="./README.zh-CN.md">中文</a>
+</p>
 
 ## 🔍 概述
 
 VSCode LSP MCP 是一个 Visual Studio Code 扩展，它通过模型上下文协议（MCP）暴露了语言服务器协议（LSP）功能。这使得 AI 助手和外部工具无需直接集成即可利用 VSCode 强大的语言智能功能。
 
+![vscode-ext](./docAssets/vsc-ext.webp)
 ![demo](./docAssets/demo.webp)
 
 ### 🌟 为什么需要这个扩展？
