@@ -1,11 +1,10 @@
 {
-  "publisher": "CJL",
   "name": "lsp-mcp",
   "displayName": "LSP MCP",
   "version": "0.0.2",
-  "private": true,
   "description": "LSP MCP Server for VSCode",
-  "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+  "publisher": "CJL",
+  "author": "CJL <2662442385@qq.com>",
   "license": "MIT",
   "homepage": "https://github.com/beixiyo/vsc-lsp-mcp",
   "repository": {
@@ -53,8 +52,8 @@
     }
   },
   "scripts": {
-    "build": "node esbuild.config.mjs",
-    "dev": "nr build --watch --sourcemap",
+    "build": "tsup",
+    "dev": "tsup --watch --sourcemap",
     "prepare": "nr update",
     "update": "vscode-ext-gen --output src/generated/meta.ts",
     "lint": "eslint .",
@@ -78,7 +77,7 @@
     "@types/vscode": "^1.97.0",
     "@vscode/vsce": "^3.2.2",
     "bumpp": "^10.0.3",
-    "esbuild": "^0.25.6",
+    "tsup": "^8.5.0",
     "eslint": "^9.20.1",
     "esno": "^4.8.0",
     "pnpm": "^10.4.1",
