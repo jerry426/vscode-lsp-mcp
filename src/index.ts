@@ -1,8 +1,15 @@
 import { defineExtension } from 'reactive-vscode'
-import { startMcp } from './mcp'
+import { startMcp, stopMcp } from './mcp'
 
 const { activate, deactivate } = defineExtension(async (context) => {
   startMcp()
+
+  // Clean up on deactivation
+  context.subscriptions.push({
+    dispose: () => {
+      stopMcp()
+    },
+  })
 })
 
 export { activate, deactivate }

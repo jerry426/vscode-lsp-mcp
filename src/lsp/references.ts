@@ -3,13 +3,12 @@ import { logger } from '../utils'
 import { getDocument } from './tools'
 
 /**
- * 获取符号的引用位置
+ * Get all references to a symbol
  *
- * @param uri 文档URI
- * @param line 行号（从0开始）
- * @param character 字符位置（从0开始）
- * @param includeDeclaration 是否包含声明
- * @returns 引用位置列表
+ * @param uri Document URI
+ * @param line Line number (0-based)
+ * @param character Character position (0-based)
+ * @returns List of reference locations
  */
 export async function getReferences(
   uri: string,

@@ -1,41 +1,46 @@
 import * as vscode from 'vscode'
 import { logger } from '../utils'
+import { LSPError, withErrorHandling } from './errors'
 import { getDocument } from './tools'
 
 /**
- * 获取指定位置的悬停信息
+ * Get hover information at the specified position
  *
- * @param uri 文档URI
- * @param line 行号（从0开始）
- * @param character 字符位置（从0开始）
- * @returns 悬停信息对象
+ * @param uri Document URI
+ * @param line Line number (0-based)
+ * @param character Character position (0-based)
+ * @returns Hover information array
  */
 export async function getHover(
   uri: string,
   line: number,
   character: number,
 ): Promise<vscode.Hover[]> {
-  try {
-    const document = await getDocument(uri)
-    if (!document) {
-      throw new Error(`无法找到文档: ${uri}`)
-    }
+  const position = new vscode.Position(line, character)
 
-    const position = new vscode.Position(line, character)
+  return withErrorHandling(
+    'get hover information',
+    async () => {
+      const document = await getDocument(uri)
+      if (!document) {
+        throw new LSPError(
+          `Document not found: ${uri}`,
+          'getHover',
+          { uri, position },
+        )
+      }
 
-    logger.info(`获取悬停信息: ${uri} 行:${line} 列:${character}`)
+      logger.info(`Getting hover info: ${uri} line:${line} char:${character}`)
 
-    // 调用VSCode API获取悬停信息
-    const hoverResults = await vscode.commands.executeCommand<vscode.Hover[]>(
-      'vscode.executeHoverProvider',
-      document.uri,
-      position,
-    )
+      // Call VSCode API to get hover information
+      const hoverResults = await vscode.commands.executeCommand<vscode.Hover[]>(
+        'vscode.executeHoverProvider',
+        document.uri,
+        position,
+      )
 
-    return hoverResults || []
-  }
-  catch (error) {
-    logger.error('获取悬停信息失败', error)
-    throw error
-  }
+      return hoverResults || []
+    },
+    { uri, position },
+  )
 }
