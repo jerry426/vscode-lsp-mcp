@@ -24,9 +24,6 @@ This extension bridges VSCode's Language Server Protocol with AI assistants thro
 - **Zero additional cost**: Leverages existing VSCode computation
 - **Language agnostic**: Works with TypeScript, JavaScript, Python, and more
 
-![vscode-ext](./docAssets/vsc-ext.webp)
-![demo](./docAssets/demo.webp)
-
 ## 🛠️ Available LSP Features
 
 ### Currently Implemented (5 features)
@@ -75,20 +72,6 @@ This extension bridges VSCode's Language Server Protocol with AI assistants thro
 claude mcp add vscode-lsp --transport http http://127.0.0.1:9527/mcp
 
 # Restart Claude Code to apply changes
-```
-
-### For Cursor
-[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.png)](https://cursor.com/install-mcp?name=lsp&config=JTdCJTIydXJsJTIyJTNBJTIyaHR0cCUzQSUyRiUyRjEyNy4wLjAuMSUzQTk1MjclMkZtY3AlMjIlN0Q%3D)
-
-Or add manually to Cursor settings:
-```json
-{
-  "mcpServers": {
-    "lsp": {
-      "url": "http://127.0.0.1:9527/mcp"
-    }
-  }
-}
 ```
 
 ## 🔧 Configuration
