@@ -173,7 +173,7 @@ VSCode settings:
 
 Test all MCP tools:
 ```bash
-python3 test_mcp_tools.py
+python3 test/test_mcp_tools.py
 ```
 
 Expected output:
