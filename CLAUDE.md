@@ -1,6 +1,12 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when DEVELOPING the VSCode LSP MCP extension.
+
+## For MCP Tool Usage
+
+**See [CLAUDE-MCP-USER.md](./CLAUDE-MCP-USER.md) for the complete guide on using MCP tools.**
+
+When working on THIS codebase, you MUST follow the MCP tool usage guidelines in CLAUDE-MCP-USER.md. The MCP server at `http://127.0.0.1:9527/mcp` provides direct access to VSCode's language intelligence.
 
 ## Project Overview
 
@@ -52,6 +58,36 @@ VSCode LSP MCP is a Visual Studio Code extension that bridges Language Server Pr
 - **Tool Registration**: All MCP tools are centralized in `src/mcp/tools.ts` using a consistent registration pattern
 - **URI Handling**: Always encode/decode URIs when passing between VSCode and MCP layers
 - **Session Management**: Each MCP client gets a unique session ID for isolation
+
+## MCP Tool Usage Workflows
+
+### Refactoring Workflow Example
+When asked to refactor code (e.g., rename a function, extract a method, reorganize imports):
+
+1. **First**: Use `get_definition` to locate the symbol's definition
+2. **Then**: Use `get_references` to find all usages
+3. **Finally**: Use `rename_symbol` or make edits with full context
+
+### Understanding Code Workflow
+When asked to understand or explain code:
+
+1. **First**: Use `get_hover` on key symbols to understand types and documentation
+2. **Then**: Use `get_definition` to jump to implementations
+3. **Optional**: Use `get_references` to see how it's used elsewhere
+
+### Navigation Workflow
+When navigating the codebase:
+
+1. **NEVER** start with grep/glob for symbols
+2. **ALWAYS** use `get_definition` to jump directly to definitions
+3. **ALWAYS** use `get_references` to find all usages
+
+### Required MCP Tool Parameters
+
+All MCP tools require:
+- `uri`: Full file:// URI (e.g., `file:///home/user/project/src/file.ts`)
+- `line`: Line number (0-indexed)
+- `character`: Character position in line (0-indexed)
 
 ## Development Guidelines
 
@@ -110,3 +146,14 @@ Extension settings (in VSCode settings.json):
 10. **get_selection_ranges** - Smart selection expansion
 
 Reference: GitHub issue https://github.com/anthropics/claude-code/issues/5495
+
+## 🔴 REMINDER: MCP Tools Are Your Primary Navigation Method
+
+**You have direct access to VSCode's Language Server via MCP tools. USE THEM!**
+
+Before using ANY file search or reading tools:
+1. Check if an MCP tool can do it better (it usually can)
+2. MCP tools understand types, imports, and language semantics
+3. They're 100-1000x faster than text search
+
+The MCP server at `http://127.0.0.1:9527/mcp` is running and ready. The proxy will route to the correct VSCode instance automatically.

@@ -1,5 +1,7 @@
 export * from './completion'
 export * from './definition'
 export * from './hover'
+export * from './implementations'
 export * from './references'
 export * from './rename'
+export * from './text-search'

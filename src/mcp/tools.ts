@@ -4,8 +4,10 @@ import {
   getCompletions,
   getDefinition,
   getHover,
+  getImplementations,
   getReferences,
   rename,
+  searchText,
 } from '../lsp'
 
 const uriDesc = `The file URI in encoded format:
@@ -83,6 +85,23 @@ export function addLspTools(server: McpServer) {
   )
 
   server.registerTool(
+    'find_implementations',
+    {
+      title: 'Find Implementations',
+      description: 'Find all implementations of an interface or abstract class.',
+      inputSchema: {
+        uri: z.string().describe(uriDesc),
+        line: z.number().describe('The line number (0-based).'),
+        character: z.number().describe('The character position (0-based).'),
+      },
+    },
+    async ({ uri, line, character }) => {
+      const result = await getImplementations(uri, line, character)
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    },
+  )
+
+  server.registerTool(
     'rename_symbol',
     {
       title: 'Rename Symbol',
@@ -97,6 +116,54 @@ export function addLspTools(server: McpServer) {
     async ({ uri, line, character, newName }) => {
       const result = await rename(uri, line, character, newName)
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    },
+  )
+
+  server.registerTool(
+    'search_text',
+    {
+      title: 'Search Text in Files',
+      description: 'Search for text across all files in the workspace. Returns file locations and positions that can be used with other tools like get_definition or get_references.',
+      inputSchema: {
+        query: z.string().describe('The text pattern to search for'),
+        useRegExp: z.boolean().optional().describe('Use regular expression pattern (default: false)'),
+        isCaseSensitive: z.boolean().optional().describe('Case sensitive search (default: false)'),
+        matchWholeWord: z.boolean().optional().describe('Match whole word only (default: false)'),
+        maxResults: z.number().optional().describe('Maximum number of results (default: 100)'),
+        includes: z.array(z.string()).optional().describe('Glob patterns to include (e.g., ["**/*.ts"])'),
+        excludes: z.array(z.string()).optional().describe('Glob patterns to exclude (default: node_modules, .git, dist, out)'),
+      },
+    },
+    async ({ query, useRegExp, isCaseSensitive, matchWholeWord, maxResults, includes, excludes }) => {
+      const results = await searchText(query, {
+        useRegExp,
+        isCaseSensitive,
+        matchWholeWord,
+        maxResults,
+        includes,
+        excludes,
+      })
+
+      // Format results for better readability
+      const formattedResults = results.map(r => ({
+        file: r.uri.split('/').pop(),
+        uri: r.uri,
+        matches: r.ranges.length,
+        firstMatch: r.ranges[0]
+          ? {
+              line: r.ranges[0].start.line + 1, // Convert to 1-based for display
+              character: r.ranges[0].start.character,
+            }
+          : null,
+        preview: r.preview.trim(),
+      }))
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify(formattedResults, null, 2),
+        }],
+      }
     },
   )
 }

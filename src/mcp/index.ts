@@ -44,6 +44,9 @@ function cleanupDeadSessions() {
 // Start cleanup timer
 let cleanupTimer: NodeJS.Timeout | null = null
 
+// Track the current port globally
+let currentPort: number = 0
+
 export function startMcp() {
   const config = workspace.getConfiguration('lsp-mcp')
   const isMcpEnabled = config.get('enabled', true)
@@ -63,6 +66,34 @@ export function startMcp() {
 
   const app = express()
   app.use(express.json())
+
+  // Endpoint to identify the workspace
+  app.get('/workspace-info', async (req, res) => {
+    const workspaceFolder = workspace.workspaceFolders?.[0]
+    if (!workspaceFolder) {
+      res.status(404).json({ error: 'No workspace folder found' })
+      return
+    }
+
+    // Try to read the workspace ID file
+    let workspaceId: string | null = null
+    try {
+      const idFilePath = `${workspaceFolder.uri.fsPath}/mcp_workspace_id`
+      const fs = await import('node:fs/promises')
+      workspaceId = (await fs.readFile(idFilePath, 'utf-8')).trim()
+    }
+    catch {
+      // File doesn't exist or can't be read
+      logger.info('No mcp_workspace_id file found')
+    }
+
+    res.json({
+      workspacePath: workspaceFolder.uri.fsPath,
+      workspaceName: workspaceFolder.name,
+      workspaceId: workspaceId || 'no-id-file',
+      port: currentPort,
+    })
+  })
 
   // Handle POST requests for client-to-server communication
   app.post('/mcp', async (req, res) => {
@@ -129,30 +160,31 @@ export function startMcp() {
   // Handle GET requests for server-to-client notifications via SSE
   app.get('/mcp', handleSessionRequest)
 
-  // 尝试启动服务器，处理端口冲突
+  // Try to start server, handling port conflicts
   startServer(app, mcpPort, maxRetries)
 }
 
-// 尝试启动服务器，如果端口被占用则尝试其他端口
+// Try to start server, if port is occupied try other ports
 function startServer(app: express.Express, initialPort: number, maxRetries: number) {
-  let currentPort = initialPort
+  currentPort = initialPort
   let retries = 0
 
   const tryListen = () => {
     const server = app.listen(currentPort, () => {
-      window.showInformationMessage(`LSP MCP 服务已启动，监听端口 ${currentPort}`)
+      window.showInformationMessage(`LSP MCP server started on port ${currentPort}`)
+      logger.info(`MCP server running at http://127.0.0.1:${currentPort}/mcp`)
     })
 
     server.on('error', (err: NodeJS.ErrnoException) => {
       if (err.code === 'EADDRINUSE' && retries < maxRetries) {
-        // 端口被占用，尝试下一个端口
+        // Port in use, try next port
         retries++
         currentPort++
-        window.showWarningMessage(`端口 ${currentPort - 1} 已被占用，尝试端口 ${currentPort}...`)
+        window.showWarningMessage(`Port ${currentPort - 1} is in use, trying port ${currentPort}...`)
         tryListen()
       }
       else {
-        window.showErrorMessage(`无法启动 LSP MCP 服务: ${err.message}`)
+        window.showErrorMessage(`Failed to start LSP MCP server: ${err.message}`)
       }
     })
   }

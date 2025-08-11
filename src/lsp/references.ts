@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 import { logger } from '../utils'
-import { getDocument } from './tools'
+import { withErrorHandling } from './errors'
 
 /**
  * Get all references to a symbol
@@ -14,28 +14,37 @@ export async function getReferences(
   uri: string,
   line: number,
   character: number,
-): Promise<vscode.Location[]> {
-  try {
-    const document = await getDocument(uri)
-    if (!document) {
-      throw new Error(`无法找到文档: ${uri}`)
-    }
+): Promise<any> {
+  const position = new vscode.Position(line, character)
 
-    const position = new vscode.Position(line, character)
+  return withErrorHandling(
+    'get references',
+    async () => {
+      logger.info(`Getting references: ${uri} line:${line} char:${character}`)
 
-    logger.info(`获取引用: ${uri} 行:${line} 列:${character}`)
+      // Parse URI directly without requiring document to be open
+      const parsedUri = vscode.Uri.parse(uri)
 
-    // 调用VSCode API获取引用位置
-    const references = await vscode.commands.executeCommand<vscode.Location[]>(
-      'vscode.executeReferenceProvider',
-      document.uri,
-      position,
-    )
+      // Call VSCode API to get reference locations
+      const references = await vscode.commands.executeCommand<vscode.Location[]>(
+        'vscode.executeReferenceProvider',
+        parsedUri,
+        position,
+      )
 
-    return references || []
-  }
-  catch (error) {
-    logger.error('获取引用失败', error)
-    throw error
-  }
+      if (!references || references.length === 0) {
+        return []
+      }
+
+      // Format references consistently
+      return references.map(ref => ({
+        uri: ref.uri.toString(),
+        range: {
+          start: { line: ref.range.start.line, character: ref.range.start.character },
+          end: { line: ref.range.end.line, character: ref.range.end.character },
+        },
+      }))
+    },
+    { uri, position },
+  )
 }

@@ -1,10 +1,6 @@
 import * as vscode from 'vscode'
 import { logger } from '../utils'
-import { LSPError, withErrorHandling } from './errors'
-import { getDocument } from './tools'
-
-// Configuration for completion limits
-const DEFAULT_COMPLETION_LIMIT = 50
+import { withErrorHandling } from './errors'
 
 /**
  * Get code completion suggestions
@@ -12,30 +8,24 @@ const DEFAULT_COMPLETION_LIMIT = 50
  * @param uri Document URI
  * @param line Line number (0-based)
  * @param character Character position (0-based)
- * @param limit Maximum number of completions to return (optional)
+ * @param triggerCharacter Optional trigger character
  * @returns Completion list or empty list
  */
 export async function getCompletions(
   uri: string,
   line: number,
   character: number,
-  limit: number = DEFAULT_COMPLETION_LIMIT,
-): Promise<vscode.CompletionList<vscode.CompletionItem>> {
+  triggerCharacter?: string,
+): Promise<any> {
   const position = new vscode.Position(line, character)
 
   return withErrorHandling(
     'get completions',
     async () => {
-      const document = await getDocument(uri)
-      if (!document) {
-        throw new LSPError(
-          `Document not found: ${uri}`,
-          'getCompletions',
-          { uri, position },
-        )
-      }
-
       logger.info(`Getting completions: ${uri} line:${line} char:${character}`)
+
+      // Parse URI directly without requiring document to be open
+      const parsedUri = vscode.Uri.parse(uri)
 
       // Call VSCode API to get completions
       // The API can return either CompletionList or CompletionItem[]
@@ -43,23 +33,34 @@ export async function getCompletions(
         vscode.CompletionList | vscode.CompletionItem[]
       >(
         'vscode.executeCompletionItemProvider',
-        document.uri,
+        parsedUri,
         position,
-        undefined, // trigger character
-        limit,
+        triggerCharacter,
       )
 
-      // Normalize the result to always return a CompletionList
+      // Handle null/undefined result
       if (!result) {
-        return new vscode.CompletionList([], false)
+        return []
       }
 
-      if (Array.isArray(result)) {
-        // Convert array to CompletionList
-        return new vscode.CompletionList(result, false)
-      }
+      // Get items array
+      const items = Array.isArray(result) ? result : result.items || []
 
-      return result
+      // Format like alternate_idea_2.md
+      return items.map(ci => ({
+        label: typeof ci.label === 'string' ? ci.label : ci.label.label,
+        kind: ci.kind,
+        detail: ci.detail,
+        documentation: typeof ci.documentation === 'string'
+          ? ci.documentation
+          : (ci.documentation as vscode.MarkdownString | undefined)?.value,
+        insertText: typeof ci.insertText === 'string'
+          ? ci.insertText
+          : (ci.insertText as vscode.SnippetString | undefined)?.value,
+        sortText: ci.sortText,
+        filterText: ci.filterText,
+        commitCharacters: ci.commitCharacters,
+      }))
     },
     { uri, position },
   )

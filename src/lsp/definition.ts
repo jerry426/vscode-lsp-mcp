@@ -1,41 +1,91 @@
 import * as vscode from 'vscode'
 import { logger } from '../utils'
-import { getDocument } from './tools'
+import { withErrorHandling } from './errors'
 
 /**
- * 获取符号定义位置
+ * Get symbol definition location
  *
- * @param uri 文档URI
- * @param line 行号（从0开始）
- * @param character 字符位置（从0开始）
- * @returns 定义位置信息
+ * @param uri - Document URI in file:// format
+ * @param line - Line number (0-based)
+ * @param character - Character position in line (0-based)
+ * @returns Array of definition locations with URI and range information
  */
 export async function getDefinition(
   uri: string,
   line: number,
   character: number,
-): Promise<vscode.Location[]> {
-  try {
-    const document = await getDocument(uri)
-    if (!document) {
-      throw new Error(`无法找到文档: ${uri}`)
-    }
+): Promise<any> {
+  const position = new vscode.Position(line, character)
 
-    const position = new vscode.Position(line, character)
+  return withErrorHandling(
+    'get definition',
+    async () => {
+      logger.info(`Getting definition: ${uri} line:${line} char:${character}`)
 
-    logger.info(`获取定义: ${uri} 行:${line} 列:${character}`)
+      // Parse URI directly without requiring document to be open
+      const parsedUri = vscode.Uri.parse(uri)
 
-    // 调用VSCode API获取定义位置
-    const definitions = await vscode.commands.executeCommand<vscode.Location[]>(
-      'vscode.executeDefinitionProvider',
-      document.uri,
-      position,
-    )
+      // Call VSCode API to get definition location
+      const definitions = await vscode.commands.executeCommand<any>(
+        'vscode.executeDefinitionProvider',
+        parsedUri,
+        position,
+      )
 
-    return definitions || []
-  }
-  catch (error) {
-    logger.error('获取定义失败', error)
-    throw error
-  }
+      // Log raw result for debugging
+      logger.info(`Definition raw result: ${JSON.stringify(definitions)?.substring(0, 500)}`)
+
+      if (!definitions) {
+        return []
+      }
+
+      // Handle different possible return types
+      let defsArray: any[] = []
+
+      if (Array.isArray(definitions)) {
+        defsArray = definitions
+      }
+      else if (definitions && typeof definitions === 'object') {
+        // Might be a single Location or LocationLink
+        defsArray = [definitions]
+      }
+
+      if (defsArray.length === 0) {
+        return []
+      }
+
+      // Format definitions consistently
+      const results: any[] = []
+
+      for (const def of defsArray) {
+        if (!def)
+          continue
+
+        // Check if it's a Location (has uri and range directly)
+        if (def.uri && def.range) {
+          results.push({
+            uri: def.uri.toString(),
+            range: {
+              start: { line: def.range.start.line, character: def.range.start.character },
+              end: { line: def.range.end.line, character: def.range.end.character },
+            },
+          })
+        }
+        // Check if it's a LocationLink (has targetUri and targetRange)
+        else if (def.targetUri && def.targetRange) {
+          results.push({
+            uri: def.targetUri.toString(),
+            range: {
+              start: { line: def.targetRange.start.line, character: def.targetRange.start.character },
+              end: { line: def.targetRange.end.line, character: def.targetRange.end.character },
+            },
+          })
+        }
+        // Skip anything else
+      }
+
+      return results
+    },
+    { uri, position },
+  )
 }
