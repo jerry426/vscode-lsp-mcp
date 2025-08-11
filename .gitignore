@@ -12,3 +12,5 @@ node_modules
 temp
 src/generated
 .hidden
+.mcp_port
+mcp_workspace_id
