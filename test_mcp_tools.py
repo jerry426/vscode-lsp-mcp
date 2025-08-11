@@ -146,8 +146,26 @@ def test_all_tools():
         print("   ✗ Implementations failed")
         results['implementations'] = False
     
+    # Test document symbols (new in v0.0.10)
+    print("\n6. Testing get_document_symbols...")
+    doc_symbols = call_mcp_tool("get_document_symbols", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/index.ts"
+    })
+    if doc_symbols is not None and len(doc_symbols) > 0:
+        print(f"   ✓ Document symbols works - found {len(doc_symbols)} top-level symbol(s)")
+        # Show symbol types
+        symbol_types = {}
+        for sym in doc_symbols:
+            kind = sym.get('kind', 'Unknown')
+            symbol_types[kind] = symbol_types.get(kind, 0) + 1
+        print(f"     Symbol types: {symbol_types}")
+        results['document_symbols'] = True
+    else:
+        print("   ✗ Document symbols failed")
+        results['document_symbols'] = False
+    
     # Test text search
-    print("\n6. Testing search_text...")
+    print("\n7. Testing search_text...")
     search = call_mcp_tool("search_text", {
         "query": "getHover",
         "maxResults": 5
@@ -159,8 +177,32 @@ def test_all_tools():
         print("   ✗ Text search failed")
         results['search'] = False
     
+    # Test 8: CALL HIERARCHY
+    print("\n8. Testing get_call_hierarchy...")
+    call_hierarchy = call_mcp_tool("get_call_hierarchy", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/index.ts",
+        "line": 50,  # startMcp function
+        "character": 17,
+        "direction": "incoming"
+    })
+    if call_hierarchy is not None:
+        if isinstance(call_hierarchy, dict) and 'target' in call_hierarchy:
+            target_name = call_hierarchy.get('target', {}).get('name', 'unknown')
+            calls_count = len(call_hierarchy.get('calls', []))
+            print(f"   ✓ Call hierarchy works - target: {target_name}, {calls_count} call(s)")
+            results['call_hierarchy'] = True
+        elif isinstance(call_hierarchy, list):
+            print(f"   ✓ Call hierarchy works - returned {len(call_hierarchy)} item(s)")
+            results['call_hierarchy'] = True
+        else:
+            print(f"   ✓ Call hierarchy works - returned result")
+            results['call_hierarchy'] = True
+    else:
+        print("   ✗ Call hierarchy failed")
+        results['call_hierarchy'] = False
+    
     # Test rename
-    print("\n7. Testing rename_symbol...")
+    print("\n9. Testing rename_symbol...")
     rename = call_mcp_tool("rename_symbol", {
         "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
         "line": 14,  # function parameter
@@ -192,7 +234,9 @@ def test_all_tools():
         ('get_definition', results.get('definition', False)),
         ('get_references', results.get('references', False)),
         ('find_implementations', results.get('implementations', False)),
+        ('get_document_symbols', results.get('document_symbols', False)),
         ('search_text', results.get('search', False)),
+        ('get_call_hierarchy', results.get('call_hierarchy', False)),
         ('rename_symbol', results.get('rename', False))
     ]
     

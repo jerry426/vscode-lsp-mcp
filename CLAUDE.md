@@ -132,8 +132,8 @@ Extension settings (in VSCode settings.json):
 ### High Priority
 1. ~~**find_implementations**~~ ✅ COMPLETED - Find all implementations of an interface/class (`vscode.executeImplementationProvider`)
 2. ~~**find_workspace_symbols**~~ ❌ REPLACED by `search_text` - VSCode API couldn't be made to work properly
-3. **get_document_symbols** - Get file outline/structure (`vscode.executeDocumentSymbolProvider`)
-4. **get_call_hierarchy** - Trace function calls (`vscode.prepareCallHierarchy`)
+3. ~~**get_document_symbols**~~ ✅ COMPLETED - Get file outline/structure (`vscode.executeDocumentSymbolProvider`)
+4. ~~**get_call_hierarchy**~~ ✅ COMPLETED - Trace function calls (`vscode.prepareCallHierarchy`)
 
 ### Medium Priority
 5. **get_type_definition** - Navigate to type definitions (`vscode.executeTypeDefinitionProvider`)

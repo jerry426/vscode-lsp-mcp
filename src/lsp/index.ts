@@ -1,5 +1,7 @@
+export * from './call-hierarchy'
 export * from './completion'
 export * from './definition'
+export * from './document-symbols'
 export * from './hover'
 export * from './implementations'
 export * from './references'

@@ -200,8 +200,62 @@ def test_all_tools_detailed():
     else:
         print("✗ No implementations found")
     
-    # Test 6: TEXT SEARCH
-    print_section("6. SEARCH_TEXT - Find Text in Files")
+    # Test 6: DOCUMENT SYMBOLS
+    print_section("6. GET_DOCUMENT_SYMBOLS - File Structure")
+    doc_symbols = call_mcp_tool("get_document_symbols", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/tools.ts"
+    })
+    
+    if doc_symbols and len(doc_symbols) > 0:
+        print(f"✓ Found {len(doc_symbols)} top-level symbol(s)")
+        
+        # Count symbol types
+        def count_symbols(symbols, counts=None):
+            if counts is None:
+                counts = {}
+            for sym in symbols:
+                kind = sym.get('kind', 'Unknown')
+                counts[kind] = counts.get(kind, 0) + 1
+                if 'children' in sym and sym['children']:
+                    count_symbols(sym['children'], counts)
+            return counts
+        
+        type_counts = count_symbols(doc_symbols)
+        print(f"\n  Symbol types: {type_counts}")
+        
+        # Show symbol hierarchy
+        print("\n  File structure:")
+        def print_symbol(sym, indent=0):
+            prefix = "  " * (indent + 2)
+            kind = sym.get('kind', 'Unknown')
+            name = sym.get('name', 'unnamed')
+            line = sym.get('range', {}).get('start', {}).get('line', 0)
+            
+            # Truncate long names
+            if len(name) > 40:
+                name = name[:37] + "..."
+            
+            print(f"{prefix}├─ {kind}: {name} (line {line + 1})")
+            
+            # Show first few children
+            if 'children' in sym and sym['children']:
+                children = sym['children'][:3]  # Limit to first 3 children
+                for child in children:
+                    print_symbol(child, indent + 1)
+                if len(sym['children']) > 3:
+                    print(f"{prefix}  └─ ... and {len(sym['children']) - 3} more")
+        
+        # Show first few top-level symbols
+        for symbol in doc_symbols[:5]:
+            print_symbol(symbol)
+        
+        if len(doc_symbols) > 5:
+            print(f"\n  ... and {len(doc_symbols) - 5} more top-level symbols")
+    else:
+        print("✗ No document symbols found")
+    
+    # Test 7: TEXT SEARCH
+    print_section("7. SEARCH_TEXT - Find Text in Files")
     search = call_mcp_tool("search_text", {
         "query": "withErrorHandling",
         "maxResults": 10
@@ -222,8 +276,97 @@ def test_all_tools_detailed():
     else:
         print("✗ No search results")
     
-    # Test 7: RENAME
-    print_section("7. RENAME_SYMBOL - Refactor Across Files")
+    # Test 8: CALL HIERARCHY
+    print_section("8. GET_CALL_HIERARCHY - Trace Function Calls")
+    
+    # First get exact position of getHover function
+    doc_symbols_hover = call_mcp_tool("get_document_symbols", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts"
+    })
+    
+    hover_line = 12  # Default fallback
+    if doc_symbols_hover:
+        for sym in doc_symbols_hover:
+            if sym.get('name') == 'getHover':
+                hover_line = sym.get('range', {}).get('start', {}).get('line', 12)
+                break
+    
+    # Test incoming calls
+    call_hierarchy_in = call_mcp_tool("get_call_hierarchy", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "line": hover_line,
+        "character": 17,  # On 'getHover'
+        "direction": "incoming"
+    })
+    
+    if call_hierarchy_in:
+        if isinstance(call_hierarchy_in, dict):
+            if 'error' in call_hierarchy_in:
+                print(f"✗ Error: {call_hierarchy_in['error']}")
+            else:
+                target = call_hierarchy_in.get('target', {})
+                calls = call_hierarchy_in.get('calls', [])
+                
+                print(f"✓ INCOMING calls to {target.get('name', 'unknown')} ({target.get('kind', 'Unknown')})")
+                
+                if calls:
+                    print(f"   Found {len(calls)} caller(s):")
+                    for i, call in enumerate(calls[:5], 1):
+                        from_item = call.get('from', {})
+                        from_name = from_item.get('name', 'unknown')
+                        from_file = from_item.get('uri', '').split('/')[-1]
+                        from_ranges = call.get('fromRanges', [])
+                        
+                        print(f"\n    {i}. {from_name} in {from_file}")
+                        if from_ranges:
+                            for r in from_ranges[:2]:
+                                line = r['start']['line']
+                                char = r['start']['character']
+                                print(f"       Call at line {line + 1}:{char}")
+                else:
+                    print("   No incoming calls found")
+        else:
+            print("✗ Unexpected response format")
+    else:
+        print("✗ Call hierarchy failed")
+    
+    # Test outgoing calls from addLspTools
+    print("\n  OUTGOING calls from addLspTools:")
+    call_hierarchy_out = call_mcp_tool("get_call_hierarchy", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/tools.ts",
+        "line": 19,  # addLspTools function
+        "character": 17,
+        "direction": "outgoing"
+    })
+    
+    if call_hierarchy_out:
+        if isinstance(call_hierarchy_out, dict) and 'target' in call_hierarchy_out:
+            target = call_hierarchy_out.get('target', {})
+            calls = call_hierarchy_out.get('calls', [])
+            
+            print(f"  Target: {target.get('name', 'unknown')} ({target.get('kind', 'Unknown')})")
+            
+            if calls:
+                print(f"  Found {len(calls)} outgoing call(s)")
+                # Group by kind
+                call_kinds = {}
+                for call in calls:
+                    from_item = call.get('from', {})
+                    kind = from_item.get('kind', 'Unknown')
+                    if kind not in call_kinds:
+                        call_kinds[kind] = 0
+                    call_kinds[kind] += 1
+                
+                print(f"  Call types: {call_kinds}")
+            else:
+                print("  No outgoing calls detected")
+        else:
+            print("  ✗ Could not get outgoing calls")
+    else:
+        print("  ✗ Outgoing call hierarchy failed")
+    
+    # Test 9: RENAME
+    print_section("9. RENAME_SYMBOL - Refactor Across Files")
     rename = call_mcp_tool("rename_symbol", {
         "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
         "line": 14,  # function parameter 'uri'
@@ -252,13 +395,15 @@ def test_all_tools_detailed():
     # Summary
     print_section("TEST SUMMARY")
     print("""
-    All tools tested with detailed output:
+    All 9 tools tested with detailed output:
     • Hover: Shows documentation and type information
     • Completions: Lists available code suggestions
     • Definition: Locates symbol definitions
     • References: Finds all usages across codebase
     • Implementations: Finds interface/class implementations
+    • Document Symbols: Shows file structure and symbol hierarchy
     • Text Search: Searches for text patterns in files
+    • Call Hierarchy: Traces incoming/outgoing function calls
     • Rename: Shows refactoring changes across files
     """)
 

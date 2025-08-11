@@ -1,8 +1,10 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import {
+  getCallHierarchy,
   getCompletions,
   getDefinition,
+  getDocumentSymbols,
   getHover,
   getImplementations,
   getReferences,
@@ -81,6 +83,39 @@ export function addLspTools(server: McpServer) {
     async ({ uri, line, character }) => {
       const result = await getReferences(uri, line, character)
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_document_symbols',
+    {
+      title: 'Get Document Symbols',
+      description: 'Get all symbols (classes, methods, functions, variables, etc.) in a document with hierarchical structure.',
+      inputSchema: {
+        uri: z.string().describe(uriDesc),
+      },
+    },
+    async ({ uri }) => {
+      const result = await getDocumentSymbols(uri)
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_call_hierarchy',
+    {
+      title: 'Get Call Hierarchy',
+      description: 'Trace function calls - find who calls a function (incoming) or what a function calls (outgoing).',
+      inputSchema: {
+        uri: z.string().describe(uriDesc),
+        line: z.number().describe('The line number (0-based).'),
+        character: z.number().describe('The character position (0-based).'),
+        direction: z.enum(['incoming', 'outgoing']).optional().describe('Direction: "incoming" for callers, "outgoing" for callees (default: incoming)'),
+      },
+    },
+    async ({ uri, line, character, direction }) => {
+      const result = await getCallHierarchy(uri, line, character, direction || 'incoming')
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     },
   )
 
