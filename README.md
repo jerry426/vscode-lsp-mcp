@@ -4,13 +4,15 @@ A Visual Studio Code extension that bridges Language Server Protocol (LSP) featu
 
 ## Features
 
-This extension exposes VSCode's Language Server Protocol features through MCP, providing AI assistants with:
+This extension exposes VSCode's Language Server Protocol features through MCP, providing AI assistants with **9 powerful tools**:
 
 - **Code Completions** (`get_completions`) - Get intelligent code suggestions at any position
 - **Hover Information** (`get_hover`) - Access documentation and type information  
 - **Go to Definition** (`get_definition`) - Navigate to symbol definitions
 - **Find References** (`get_references`) - Locate all usages of a symbol
 - **Find Implementations** (`find_implementations`) - Find all implementations of an interface/class
+- **Document Symbols** (`get_document_symbols`) - Get file structure with all symbols hierarchically
+- **Call Hierarchy** (`get_call_hierarchy`) - Trace incoming/outgoing function calls
 - **Symbol Rename** (`rename_symbol`) - Refactor symbols across the workspace
 - **Text Search** (`search_text`) - Search for text patterns across all files
 
@@ -111,6 +113,17 @@ Returns: All locations where the symbol is used
 ```
 Returns: All locations where the interface/class is implemented
 
+#### `get_call_hierarchy`
+```json
+{
+  "uri": "file:///path/to/file.ts",
+  "line": 10,
+  "character": 15,
+  "direction": "incoming"  // or "outgoing"
+}
+```
+Returns: Function call relationships - incoming shows callers, outgoing shows callees
+
 #### `rename_symbol`
 ```json
 {
@@ -121,6 +134,16 @@ Returns: All locations where the interface/class is implemented
 }
 ```
 Returns: Edit operations to rename across all files
+
+### Document-Level Tools
+
+#### `get_document_symbols`
+```json
+{
+  "uri": "file:///path/to/file.ts"
+}
+```
+Returns: Hierarchical structure of all symbols in the file (classes, methods, properties, etc.)
 
 ### Search Tools
 
@@ -160,7 +183,10 @@ Expected output:
 ✓ Definition works - found 1 location(s)
 ✓ References works - found 5 reference(s)
 ✓ Implementations works - interface/class implementations
+✓ Document symbols works - found 10 top-level symbol(s)
 ✓ Text search works - found 6 match(es)
+✓ Call hierarchy works - target: startMcp, 2 call(s)
+✓ Rename works - would affect 2 file(s)
 ```
 
 ## Architecture
@@ -221,12 +247,15 @@ src/
 │   ├── index.ts      # MCP server implementation
 │   └── tools.ts      # Tool registrations
 ├── lsp/
-│   ├── hover.ts      # Hover information
-│   ├── completion.ts # Code completions
-│   ├── definition.ts # Go to definition
-│   ├── references.ts # Find references
-│   ├── rename.ts     # Symbol rename
-│   └── text-search.ts # Text search
+│   ├── hover.ts          # Hover information
+│   ├── completion.ts     # Code completions
+│   ├── definition.ts     # Go to definition
+│   ├── references.ts     # Find references
+│   ├── implementations.ts # Find implementations
+│   ├── document-symbols.ts # File structure
+│   ├── call-hierarchy.ts # Call tracing
+│   ├── rename.ts         # Symbol rename
+│   └── text-search.ts    # Text search
 └── utils/
     └── index.ts      # Logging utilities
 ```
@@ -235,8 +264,8 @@ src/
 
 ### High Priority
 - [x] `find_implementations` - Find all implementations of an interface ✅ (v0.0.6)
-- [ ] `get_document_symbols` - Get file outline/structure
-- [ ] `get_call_hierarchy` - Trace function calls
+- [x] `get_document_symbols` - Get file outline/structure ✅ (v0.0.10)
+- [x] `get_call_hierarchy` - Trace function calls ✅ (v0.0.11)
 - [ ] `get_type_definition` - Navigate to type definitions
 
 ### Medium Priority
