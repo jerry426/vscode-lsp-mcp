@@ -130,8 +130,8 @@ Extension settings (in VSCode settings.json):
 ## Roadmap - Features to Implement
 
 ### High Priority
-1. **find_implementations** - Find all implementations of an interface/class (`vscode.executeImplementationProvider`)
-2. **find_workspace_symbols** - Search symbols across workspace (`vscode.executeWorkspaceSymbolProvider`)
+1. ~~**find_implementations**~~ ✅ COMPLETED - Find all implementations of an interface/class (`vscode.executeImplementationProvider`)
+2. ~~**find_workspace_symbols**~~ ❌ REPLACED by `search_text` - VSCode API couldn't be made to work properly
 3. **get_document_symbols** - Get file outline/structure (`vscode.executeDocumentSymbolProvider`)
 4. **get_call_hierarchy** - Trace function calls (`vscode.prepareCallHierarchy`)
 

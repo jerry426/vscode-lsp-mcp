@@ -19,7 +19,7 @@ The MCP server provides direct access to VSCode's Language Server Protocol featu
 
 | Task | USE THIS MCP Tool | NOT grep/glob/find |
 |------|------------------|-------------------|
-| **Search for any symbol by name** | `find_workspace_symbols` | ❌ Don't grep for symbol names |
+| **Search for any symbol/text** | `search_text` | ❌ Don't grep for text patterns |
 | Find where a function/variable/class is defined | `get_definition` | ❌ Don't grep for "function name" |
 | Find all places where something is used | `get_references` | ❌ Don't grep for text matches |
 | Understand what a symbol is/does | `get_hover` | ❌ Don't read multiple files |
@@ -87,7 +87,7 @@ RIGHT ✅:
   "query": "ProxyClient"  // Just the symbol name or partial name
 }
 ```
-- `find_workspace_symbols` - Search by name, returns locations
+- `search_text` - Search for text patterns, returns locations
 
 ### Tools that DO need precise location:
 
@@ -108,7 +108,7 @@ RIGHT ✅:
 
 1. **Start with name search** (no location needed):
    ```
-   find_workspace_symbols("ProxyClient")  // Returns all matches with locations
+   search_text("ProxyClient")  // Returns all matches with locations
    ```
 
 2. **Use returned locations** with other tools:
@@ -118,11 +118,12 @@ RIGHT ✅:
 
 ## Tool Descriptions
 
-### find_workspace_symbols 🆕 PRIMARY ENTRY POINT
-- **Purpose**: Search for symbols by name across entire workspace
-- **Use when**: Looking for any class, function, variable, type, etc.
-- **Returns**: All matching symbols with their locations
-- **Example**: `find_workspace_symbols("ProxyClient")` finds all ProxyClient symbols
+### search_text 🆕 PRIMARY ENTRY POINT  
+- **Purpose**: Search for text patterns across entire workspace
+- **Use when**: Looking for any text, symbols, function names, etc.
+- **Returns**: All matching locations with file paths and line numbers
+- **Example**: `search_text("ProxyClient")` finds all occurrences of ProxyClient
+- **Note**: Replaced find_workspace_symbols (which couldn't be made to work with VSCode API)
 
 ### get_definition
 - **Purpose**: Jump directly to where something is defined
@@ -154,17 +155,17 @@ RIGHT ✅:
 ```
 Need to find something in code?
 ├─ Is it a symbol (function/class/variable)?
-│  ├─ YES → Start with find_workspace_symbols
-│  │  ├─ Don't know location? → find_workspace_symbols FIRST
+│  ├─ YES → Start with search_text
+│  │  ├─ Don't know location? → search_text FIRST
 │  │  ├─ Have location, need definition? → get_definition
 │  │  ├─ Have location, need usages? → get_references
 │  │  ├─ Have location, need docs? → get_hover
 │  │  └─ Want to rename? → rename_symbol
 │  └─ NO → Is it a text pattern?
-│     ├─ YES → Try find_workspace_symbols first, then grep
+│     ├─ YES → Try search_text first, then grep
 │     └─ NO → Use appropriate tool
 └─ Need to browse/explore?
-   ├─ Looking for symbols? → find_workspace_symbols
+   ├─ Looking for symbols? → search_text
    └─ Looking for files? → Use glob/ls
 ```
 
@@ -180,7 +181,7 @@ Need to find something in code?
 ## ⚠️ Important Reminders
 
 1. **MCP tools work on any file in the workspace** - The language server has already indexed your entire project
-2. **Current tools need a starting position** - You must provide a file location where the symbol appears (line/character). Future tools like `find_workspace_symbols` will search by name
+2. **Most tools need a starting position** - You must provide a file location where the symbol appears (line/character). Use `search_text` to find symbols by name across the workspace
 3. **URIs must be absolute** - Always use full file:// paths
 4. **Try MCP first, fall back to search** - Even if unsure, try MCP tools first
 5. **The proxy handles routing** - You don't need to worry about which VSCode instance
