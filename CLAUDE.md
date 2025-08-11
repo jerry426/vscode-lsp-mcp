@@ -48,7 +48,11 @@ VSCode LSP MCP is a Visual Studio Code extension that bridges Language Server Pr
    - `completion.ts` - Code completions
    - `definition.ts` - Find definitions
    - `references.ts` - Find references
+   - `implementations.ts` - Find implementations
+   - `document-symbols.ts` - File structure/symbols
+   - `call-hierarchy.ts` - Function call tracing
    - `rename.ts` - Symbol renaming
+   - `text-search.ts` - Text pattern search
 
 4. **Tools Registry** (`src/mcp/tools.ts`): Registers LSP functions as MCP tools with Zod validation
 
@@ -84,10 +88,14 @@ When navigating the codebase:
 
 ### Required MCP Tool Parameters
 
-All MCP tools require:
+Most MCP tools require:
 - `uri`: Full file:// URI (e.g., `file:///home/user/project/src/file.ts`)
 - `line`: Line number (0-indexed)
 - `character`: Character position in line (0-indexed)
+
+Exceptions:
+- `search_text`: Only needs query string
+- `get_document_symbols`: Only needs URI, no position
 
 ## Development Guidelines
 
@@ -125,25 +133,30 @@ Extension settings (in VSCode settings.json):
 - The MCP server URL for AI tools: `http://127.0.0.1:{port}/mcp`
 - All LSP operations require an active text editor with the target file open
 - URI parameters in MCP tools must be properly encoded file:// URIs
-- Python test client available as `lsp_mcp_client.py` for debugging
+- Python test clients available in `test/` directory for debugging
 
 ## Roadmap - Features to Implement
 
-### High Priority
-1. ~~**find_implementations**~~ ✅ COMPLETED - Find all implementations of an interface/class (`vscode.executeImplementationProvider`)
-2. ~~**find_workspace_symbols**~~ ❌ REPLACED by `search_text` - VSCode API couldn't be made to work properly
-3. ~~**get_document_symbols**~~ ✅ COMPLETED - Get file outline/structure (`vscode.executeDocumentSymbolProvider`)
-4. ~~**get_call_hierarchy**~~ ✅ COMPLETED - Trace function calls (`vscode.prepareCallHierarchy`)
+### Completed (9 tools working)
+1. ✅ **get_hover** - Documentation and type information
+2. ✅ **get_completions** - Code completion suggestions
+3. ✅ **get_definition** - Jump to symbol definitions
+4. ✅ **get_references** - Find all usages
+5. ✅ **find_implementations** - Find interface/class implementations (v0.0.6)
+6. ✅ **get_document_symbols** - File structure/outline (v0.0.10)
+7. ✅ **get_call_hierarchy** - Trace function calls (v0.0.11)
+8. ✅ **rename_symbol** - Safe refactoring across workspace
+9. ✅ **search_text** - Text pattern search (replaced find_workspace_symbols)
 
-### Medium Priority
-5. **get_type_definition** - Navigate to type definitions (`vscode.executeTypeDefinitionProvider`)
-6. **get_code_actions** - Get available quick fixes (`vscode.executeCodeActionProvider`)
-7. **get_diagnostics** - Get errors/warnings (`vscode.languages.getDiagnostics`)
+### To Implement - High Priority
+1. **get_type_definition** - Navigate to type definitions (`vscode.executeTypeDefinitionProvider`)
+2. **get_code_actions** - Get available quick fixes (`vscode.executeCodeActionProvider`)
+3. **get_diagnostics** - Get errors/warnings (`vscode.languages.getDiagnostics`)
 
-### Lower Priority
-8. **get_semantic_tokens** - Semantic highlighting info
-9. **get_folding_ranges** - Code folding regions
-10. **get_selection_ranges** - Smart selection expansion
+### To Implement - Lower Priority
+4. **get_semantic_tokens** - Semantic highlighting info
+5. **get_folding_ranges** - Code folding regions
+6. **get_selection_ranges** - Smart selection expansion
 
 Reference: GitHub issue https://github.com/anthropics/claude-code/issues/5495
 

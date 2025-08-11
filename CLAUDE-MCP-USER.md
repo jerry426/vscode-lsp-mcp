@@ -22,6 +22,9 @@ The MCP server provides direct access to VSCode's Language Server Protocol featu
 | **Search for any symbol/text** | `search_text` | ❌ Don't grep for text patterns |
 | Find where a function/variable/class is defined | `get_definition` | ❌ Don't grep for "function name" |
 | Find all places where something is used | `get_references` | ❌ Don't grep for text matches |
+| Find implementations of an interface/class | `find_implementations` | ❌ Don't grep for "implements" |
+| Understand file structure/symbols | `get_document_symbols` | ❌ Don't manually parse files |
+| Trace function calls (who calls/called by) | `get_call_hierarchy` | ❌ Don't grep for function calls |
 | Understand what a symbol is/does | `get_hover` | ❌ Don't read multiple files |
 | Get code suggestions at a position | `get_completions` | ❌ Don't guess what's available |
 | Rename a symbol throughout codebase | `rename_symbol` | ❌ Don't find/replace text |
@@ -80,7 +83,7 @@ RIGHT ✅:
 
 ## MCP Tool Parameters
 
-### Tools that DON'T need location (search by name):
+### Tools that DON'T need location:
 
 ```json
 {
@@ -88,6 +91,13 @@ RIGHT ✅:
 }
 ```
 - `search_text` - Search for text patterns, returns locations
+
+```json
+{
+  "uri": "file:///absolute/path/to/file.ts"  // Just needs file path
+}
+```
+- `get_document_symbols` - Get all symbols in a file (classes, methods, properties)
 
 ### Tools that DO need precise location:
 
@@ -103,6 +113,8 @@ RIGHT ✅:
 - `get_hover` - Needs position to hover over
 - `get_completions` - Needs cursor position
 - `rename_symbol` - Needs position of symbol to rename
+- `find_implementations` - Needs position of interface/class
+- `get_call_hierarchy` - Needs position of function + direction
 
 ### Typical Workflow
 
@@ -150,6 +162,23 @@ RIGHT ✅:
 - **Use when**: Refactoring names consistently
 - **Returns**: All locations that were updated
 
+### find_implementations
+- **Purpose**: Find all implementations of an interface or abstract class
+- **Use when**: Need to find concrete implementations
+- **Returns**: Locations of all implementing classes/methods
+
+### get_document_symbols
+- **Purpose**: Get hierarchical structure of all symbols in a file
+- **Use when**: Understanding file organization, finding methods in a class
+- **Returns**: Tree structure of classes, methods, properties, etc.
+- **Note**: Only needs file URI, no position required
+
+### get_call_hierarchy
+- **Purpose**: Trace function calls - who calls this function or what it calls
+- **Use when**: Understanding call flow, impact analysis
+- **Returns**: Incoming calls (callers) or outgoing calls (callees)
+- **Parameters**: Needs position + direction ("incoming" or "outgoing")
+
 ## Decision Tree
 
 ```
@@ -159,12 +188,15 @@ Need to find something in code?
 │  │  ├─ Don't know location? → search_text FIRST
 │  │  ├─ Have location, need definition? → get_definition
 │  │  ├─ Have location, need usages? → get_references
+│  │  ├─ Have location, need implementations? → find_implementations
+│  │  ├─ Have location, need call flow? → get_call_hierarchy
 │  │  ├─ Have location, need docs? → get_hover
 │  │  └─ Want to rename? → rename_symbol
 │  └─ NO → Is it a text pattern?
 │     ├─ YES → Try search_text first, then grep
 │     └─ NO → Use appropriate tool
 └─ Need to browse/explore?
+   ├─ Looking for file structure? → get_document_symbols
    ├─ Looking for symbols? → search_text
    └─ Looking for files? → Use glob/ls
 ```
@@ -175,6 +207,9 @@ Need to find something in code?
 |-----------|--------------|------------------|-------------|
 | Find definition | ~10ms | 1-10s | 100-1000x |
 | Find all references | ~50ms | 10-60s | 200-1200x |
+| Find implementations | ~30ms | 5-30s | 200-1000x |
+| Get file structure | ~20ms | 1-5s (parsing) | 50-250x |
+| Trace call hierarchy | ~50ms | Minutes (manual) | 1000x+ |
 | Get documentation | ~5ms | N/A (manual) | ∞ |
 | Safe rename | ~100ms | Minutes (manual) | 1000x+ |
 
