@@ -11,6 +11,8 @@ import {
   rename,
   searchText,
 } from '../lsp'
+import { logger } from '../utils'
+import { bufferResponse, getBufferStats, retrieveBuffer } from './buffer-manager'
 
 const uriDesc = `The file URI in encoded format:
 - Windows: "file:///c%3A/path/to/file.ts" (drive letter and colon, ":" encoded as "%3A")
@@ -31,6 +33,23 @@ export function addLspTools(server: McpServer) {
     },
     async ({ uri, line, character }) => {
       const result = await getCompletions(uri, line, character)
+
+      // Apply buffering if needed (completions can be very large)
+      const bufferedResponse = bufferResponse('get_completions', result)
+
+      if (bufferedResponse.metadata) {
+        logger.info(`Completions returned buffered response: ${bufferedResponse.metadata.totalTokens} tokens`)
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              type: 'buffered_response',
+              ...bufferedResponse,
+            }, null, 2),
+          }],
+        }
+      }
+
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
     },
   )
@@ -82,6 +101,23 @@ export function addLspTools(server: McpServer) {
     },
     async ({ uri, line, character }) => {
       const result = await getReferences(uri, line, character)
+
+      // Apply buffering if needed
+      const bufferedResponse = bufferResponse('get_references', result)
+
+      if (bufferedResponse.metadata) {
+        logger.info(`References returned buffered response: ${bufferedResponse.metadata.totalTokens} tokens`)
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              type: 'buffered_response',
+              ...bufferedResponse,
+            }, null, 2),
+          }],
+        }
+      }
+
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
     },
   )
@@ -97,6 +133,23 @@ export function addLspTools(server: McpServer) {
     },
     async ({ uri }) => {
       const result = await getDocumentSymbols(uri)
+
+      // Apply buffering if needed
+      const bufferedResponse = bufferResponse('get_document_symbols', result)
+
+      if (bufferedResponse.metadata) {
+        logger.info(`Document symbols returned buffered response: ${bufferedResponse.metadata.totalTokens} tokens`)
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              type: 'buffered_response',
+              ...bufferedResponse,
+            }, null, 2),
+          }],
+        }
+      }
+
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     },
   )
@@ -193,11 +246,119 @@ export function addLspTools(server: McpServer) {
         preview: r.preview.trim(),
       }))
 
+      // Apply buffering if needed
+      const bufferedResponse = bufferResponse('search_text', formattedResults)
+
+      // Check if we got a buffered response or original data
+      if (bufferedResponse.metadata) {
+        logger.info(`Search returned buffered response: ${bufferedResponse.metadata.totalTokens} tokens`)
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              type: 'buffered_response',
+              ...bufferedResponse,
+            }, null, 2),
+          }],
+        }
+      }
+
       return {
         content: [{
           type: 'text',
           text: JSON.stringify(formattedResults, null, 2),
         }],
+      }
+    },
+  )
+
+  // Add buffer management tools
+  server.registerTool(
+    'retrieve_buffer',
+    {
+      title: 'Retrieve Buffered Data',
+      description: 'Retrieve the full data from a buffered response using its buffer ID',
+      inputSchema: {
+        bufferId: z.string().describe('The buffer ID returned in a buffered response'),
+      },
+    },
+    async ({ bufferId }) => {
+      const data = retrieveBuffer(bufferId)
+
+      if (!data) {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              error: 'Buffer not found or expired',
+              bufferId,
+            }),
+          }],
+        }
+      }
+
+      logger.info(`Retrieved buffer ${bufferId}`)
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_buffer_stats',
+    {
+      title: 'Get Buffer Statistics',
+      description: 'Get statistics about currently buffered responses',
+      inputSchema: {},
+    },
+    async () => {
+      const stats = getBufferStats()
+      return { content: [{ type: 'text', text: JSON.stringify(stats, null, 2) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_instructions',
+    {
+      title: 'Get Usage Instructions',
+      description: 'Get comprehensive instructions on how to use the VSCode LSP MCP tools. Returns the complete usage guide including tool descriptions, parameters, workflows, and best practices.',
+      inputSchema: {},
+    },
+    async () => {
+      const { workspace, Uri } = await import('vscode')
+
+      // Find CLAUDE-MCP-USER.md in the workspace
+      const workspaceFolder = workspace.workspaceFolders?.[0]
+      if (!workspaceFolder) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'Error: No workspace folder found',
+          }],
+        }
+      }
+
+      const instructionsPath = Uri.joinPath(workspaceFolder.uri, 'CLAUDE-MCP-USER.md')
+
+      try {
+        const fileContent = await workspace.fs.readFile(instructionsPath)
+        const instructions = new TextDecoder().decode(fileContent)
+
+        logger.info('Returned usage instructions from CLAUDE-MCP-USER.md')
+
+        return {
+          content: [{
+            type: 'text',
+            text: instructions,
+          }],
+        }
+      }
+      catch (error) {
+        logger.error('Failed to read CLAUDE-MCP-USER.md', error)
+        return {
+          content: [{
+            type: 'text',
+            text: `Error: Could not read CLAUDE-MCP-USER.md. Please ensure the file exists in the workspace root. Error: ${error}`,
+          }],
+        }
       }
     },
   )

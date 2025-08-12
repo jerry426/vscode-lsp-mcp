@@ -3,9 +3,10 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import express from 'express'
-import { window, workspace } from 'vscode'
+import { Uri, window, workspace } from 'vscode'
 import { logger } from '../utils'
 import { addLspTools } from './tools'
+import { cleanupBuffers } from './buffer-manager'
 
 // Map to store transports by session ID with metadata
 interface SessionInfo {
@@ -47,15 +48,37 @@ let cleanupTimer: NodeJS.Timeout | null = null
 // Track the current port globally
 let currentPort: number = 0
 
-export function startMcp() {
+export async function startMcp() {
   const config = workspace.getConfiguration('lsp-mcp')
   const isMcpEnabled = config.get('enabled', true)
-  const mcpPort = config.get('port', 9527)
-  const maxRetries = config.get('maxRetries', 10)
 
   if (!isMcpEnabled) {
     window.showInformationMessage('LSP MCP server is disabled by configuration.')
     return
+  }
+
+  // Default values
+  let mcpPort = config.get('port', 9527)
+  let maxRetries = config.get('maxRetries', 10)
+
+  // Check for .lsp_mcp_port file in workspace root
+  const workspaceFolder = workspace.workspaceFolders?.[0]
+  if (workspaceFolder) {
+    try {
+      const portFile = Uri.joinPath(workspaceFolder.uri, '.lsp_mcp_port')
+      const portContent = await workspace.fs.readFile(portFile)
+      const fixedPort = Number.parseInt(new TextDecoder().decode(portContent).trim(), 10)
+
+      if (!Number.isNaN(fixedPort) && fixedPort > 0 && fixedPort < 65536) {
+        mcpPort = fixedPort
+        maxRetries = 0 // Don't retry if using fixed port from file
+        logger.info(`Using fixed port ${mcpPort} from .lsp_mcp_port file`)
+      }
+    }
+    catch {
+      // No .lsp_mcp_port file, use defaults
+      logger.info(`No .lsp_mcp_port file found, using default port ${mcpPort}`)
+    }
   }
 
   // Start session cleanup timer
@@ -78,13 +101,13 @@ export function startMcp() {
     // Try to read the workspace ID file
     let workspaceId: string | null = null
     try {
-      const idFilePath = `${workspaceFolder.uri.fsPath}/mcp_workspace_id`
+      const idFilePath = `${workspaceFolder.uri.fsPath}/.lsp_mcp_workspace_id`
       const fs = await import('node:fs/promises')
       workspaceId = (await fs.readFile(idFilePath, 'utf-8')).trim()
     }
     catch {
       // File doesn't exist or can't be read
-      logger.info('No mcp_workspace_id file found')
+      logger.info('No .lsp_mcp_workspace_id file found')
     }
 
     res.json({
@@ -213,6 +236,9 @@ export function stopMcp() {
     clearInterval(cleanupTimer)
     cleanupTimer = null
   }
+
+  // Clean up buffer manager
+  cleanupBuffers()
 
   // Close all active sessions
   for (const sessionInfo of Object.values(sessions)) {

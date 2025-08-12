@@ -5,6 +5,7 @@
 
 import * as vscode from 'vscode'
 import { logger } from '../utils'
+import { searchWithFallback } from './search-fallback'
 
 export interface SearchResult {
   uri: string
@@ -39,10 +40,19 @@ export async function searchText(
     excludes?: string[]
   } = {},
 ): Promise<SearchResult[]> {
-  const results: SearchResult[] = []
-
   try {
     logger.info(`Searching workspace for text: "${query}"`)
+
+    // First try the search with multiple fallback approaches
+    const fallbackResults = await searchWithFallback(query, options)
+    if (fallbackResults.length > 0) {
+      logger.info(`Fallback search found ${fallbackResults.length} results`)
+      return fallbackResults
+    }
+
+    logger.info('Falling back to original search implementation')
+
+    const _results: SearchResult[] = []
 
     // Get workspace folders
     const workspaceFolders = vscode.workspace.workspaceFolders
@@ -51,83 +61,79 @@ export async function searchText(
       return []
     }
 
-    // Build glob pattern for includes
-    const includePattern = options.includes && options.includes.length > 0
-      ? `{${options.includes.join(',')}}`
-      : '**/*'
-
-    // Find files matching the pattern
-    const files = await vscode.workspace.findFiles(
-      includePattern,
-      options.excludes ? `{${options.excludes.join(',')}}` : '**/node_modules/**',
-      options.maxResults ?? 100,
-    )
-
-    // Search within each file
-    for (const fileUri of files) {
-      if (results.length >= (options.maxResults ?? 100)) {
-        break
-      }
-
-      try {
-        const document = await vscode.workspace.openTextDocument(fileUri)
-        const text = document.getText()
-
-        // Build regex pattern
-        let pattern: RegExp
-        if (options.useRegExp) {
-          pattern = new RegExp(query, options.isCaseSensitive ? 'g' : 'gi')
-        }
-        else {
-          // Escape special regex characters
-          const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-          const wordBoundary = options.matchWholeWord ? '\\b' : ''
-          pattern = new RegExp(
-            `${wordBoundary}${escaped}${wordBoundary}`,
-            options.isCaseSensitive ? 'g' : 'gi',
-          )
-        }
-
-        // Find all matches
-        let match: RegExpExecArray | null
-        const fileRanges: SearchResult['ranges'] = []
-
-        // eslint-disable-next-line no-cond-assign
-        while ((match = pattern.exec(text)) !== null) {
-          const startPos = document.positionAt(match.index)
-          const endPos = document.positionAt(match.index + match[0].length)
-
-          fileRanges.push({
-            start: { line: startPos.line, character: startPos.character },
-            end: { line: endPos.line, character: endPos.character },
-          })
-
-          // Stop if we have enough results
-          if (results.length + 1 >= (options.maxResults ?? 100)) {
-            break
-          }
-        }
-
-        if (fileRanges.length > 0) {
-          // Get preview from first match
-          const firstRange = fileRanges[0]
-          const line = document.lineAt(firstRange.start.line)
-
-          results.push({
-            uri: fileUri.toString(),
-            ranges: fileRanges,
-            preview: line.text.trim(),
-          })
-        }
-      }
-      catch (error) {
-        // Skip files that can't be opened
-        logger.info(`Skipping file ${fileUri.toString()}: ${error}`)
-      }
+    // Build search options
+    // @ts-ignore - FindTextInFilesOptions may not be available in all VSCode versions
+    const searchOptions: any = {
+      include: options.includes && options.includes.length > 0
+        ? new vscode.RelativePattern(workspaceFolders[0], `{${options.includes.join(',')}}`)
+        : new vscode.RelativePattern(workspaceFolders[0], '**/*'),
+      exclude: options.excludes && options.excludes.length > 0
+        ? `{${options.excludes.join(',')}}`
+        : '**/node_modules/**',
+      maxResults: options.maxResults ?? 100,
+      previewOptions: {
+        matchLines: 1,
+        charsPerLine: 200,
+      },
+      isRegex: options.useRegExp ?? false,
+      isCaseSensitive: options.isCaseSensitive ?? false,
+      isWordMatch: options.matchWholeWord ?? false,
     }
 
-    logger.info(`Text search found ${results.length} results`)
-    return results
+    // Create search query
+    // @ts-ignore - TextSearchQuery may not be available in all VSCode versions
+    const searchQuery = new (vscode as any).TextSearchQuery(query, searchOptions)
+
+    // Perform the search using findTextInFiles
+    const searchPromise = new Promise<SearchResult[]>((resolve) => {
+      const tempResults: SearchResult[] = []
+
+      // @ts-ignore - findTextInFiles may not be available in all VSCode versions
+      const searchOperation = (vscode.workspace as any).findTextInFiles(
+        searchQuery,
+        (result: any) => {
+          // Check if this is a text search match (not a complete event)
+          if ('uri' in result && 'ranges' in result) {
+            const ranges = result.ranges.map((range: any) => ({
+              start: { line: range.start.line, character: range.start.character },
+              end: { line: range.end.line, character: range.end.character },
+            }))
+
+            // Get preview text
+            const preview = result.preview?.text?.trim() || ''
+
+            tempResults.push({
+              uri: result.uri.toString(),
+              ranges,
+              preview,
+            })
+          }
+        },
+        // Token for cancellation (undefined means no cancellation)
+        undefined,
+      )
+
+      if (searchOperation && searchOperation.then) {
+        searchOperation.then(
+          (_complete: any) => {
+            logger.info(`Search complete. Found ${tempResults.length} results`)
+            resolve(tempResults)
+          },
+          (error: any) => {
+            logger.error('Search failed:', error)
+            resolve([])
+          },
+        )
+      }
+      else {
+        // If findTextInFiles doesn't return a promise, resolve immediately
+        setTimeout(() => resolve(tempResults), 100)
+      }
+    })
+
+    const searchResults = await searchPromise
+    logger.info(`Returning ${searchResults.length} search results`)
+    return searchResults
   }
   catch (error) {
     logger.error('Text search failed', error)

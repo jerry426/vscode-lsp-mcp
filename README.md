@@ -4,7 +4,7 @@ A Visual Studio Code extension that bridges Language Server Protocol (LSP) featu
 
 ## Features
 
-This extension exposes VSCode's Language Server Protocol features through MCP, providing AI assistants with **9 powerful tools**:
+This extension exposes VSCode's Language Server Protocol features through MCP, providing AI assistants with **12 powerful tools**:
 
 - **Code Completions** (`get_completions`) - Get intelligent code suggestions at any position
 - **Hover Information** (`get_hover`) - Access documentation and type information  
@@ -15,6 +15,19 @@ This extension exposes VSCode's Language Server Protocol features through MCP, p
 - **Call Hierarchy** (`get_call_hierarchy`) - Trace incoming/outgoing function calls
 - **Symbol Rename** (`rename_symbol`) - Refactor symbols across the workspace
 - **Text Search** (`search_text`) - Search for text patterns across all files
+- **Buffer Retrieval** (`retrieve_buffer`) - Retrieve full data from buffered responses
+- **Buffer Statistics** (`get_buffer_stats`) - Monitor buffer system usage
+- **Get Instructions** (`get_instructions`) - Self-documenting API returns complete usage guide
+
+### Intelligent Buffer System
+
+The extension includes a sophisticated buffer system to prevent token overflow:
+
+- **Automatic buffering** for responses over 2,500 tokens (~10KB)
+- **Smart previews** with tool-specific intelligent summaries
+- **Depth truncation** to limit deeply nested data structures
+- **Session-based isolation** for multiple concurrent users
+- **60-second TTL** with automatic cleanup
 
 ### Performance Benefits
 
@@ -34,26 +47,63 @@ This extension exposes VSCode's Language Server Protocol features through MCP, p
 
 ## Usage
 
-### For AI Assistants (MCP Clients)
+### Quick Start - Automatic Setup
 
-The extension starts an MCP server automatically when VSCode opens. Default port is 9527.
-
-Connect your MCP client to:
-```
-http://127.0.0.1:9527/mcp
-```
-
-### Multi-Workspace Support
-
-For multiple VSCode instances, create a `mcp_workspace_id` file in your project root:
+**One command sets up everything:**
 ```bash
-echo "unique-workspace-id" > mcp_workspace_id
+./mcp setup /path/to/your/project
 ```
 
-Then use the discovery endpoint to find the correct port:
+This automatically:
+- Finds an available port
+- Creates configuration files
+- Generates the Claude command
+- Tests the connection
+- Optionally configures Claude
+
+### Status Dashboard
+
+**See all your MCP-enabled projects:**
 ```bash
-curl http://127.0.0.1:9527/workspace-info
+./mcp status
 ```
+
+Shows which projects are configured, running, and connected to Claude.
+
+### Multiple Projects Setup
+
+Each project needs its own unique port number:
+
+1. **Assign unique ports to each project:**
+   ```bash
+   # Project A
+   echo "9527" > /path/to/project-a/.lsp_mcp_port
+   
+   # Project B  
+   echo "9528" > /path/to/project-b/.lsp_mcp_port
+   
+   # Project C
+   echo "9529" > /path/to/project-c/.lsp_mcp_port
+   ```
+
+2. **Set up Claude for each project:**
+   ```bash
+   # Get the Claude command for each project
+   ./mcp claude /path/to/project-a
+   
+   ./mcp claude /path/to/project-b
+   ```
+
+3. **The extension will automatically use the port from `.lsp_mcp_port`** when you open each project
+
+### Port Discovery
+
+To see all running MCP servers:
+```bash
+python3 test/find_mcp_servers.py
+```
+
+This shows which ports are actually in use and their workspace paths.
 
 ## Available MCP Tools
 
@@ -161,6 +211,30 @@ Returns: Hierarchical structure of all symbols in the file (classes, methods, pr
 ```
 Returns: File locations and positions matching the search
 
+### Buffer Management Tools
+
+#### `retrieve_buffer`
+```json
+{
+  "bufferId": "get_document_symbols_1754955026362_z2ksv6t8z"
+}
+```
+Returns: Complete original data from a buffered response
+
+#### `get_buffer_stats`
+```json
+{}  // No parameters required
+```
+Returns: Active buffer count, total size, oldest buffer age
+
+### Self-Documentation Tool
+
+#### `get_instructions`
+```json
+{}  // No parameters required
+```
+Returns: Complete CLAUDE-MCP-USER.md guide with all usage instructions
+
 ## Configuration
 
 VSCode settings:
@@ -187,6 +261,10 @@ Expected output:
 ✓ Text search works - found 6 match(es)
 ✓ Call hierarchy works - target: startMcp, 2 call(s)
 ✓ Rename works - would affect 2 file(s)
+✓ Buffer system works - response buffered (8744 tokens)
+✓ retrieve_buffer works - retrieved 21 items
+✓ Buffer stats works - 3 active buffer(s)
+🎉 SUCCESS! All 12 tools are working!
 ```
 
 ## Architecture
@@ -245,7 +323,8 @@ src/
 ├── index.ts           # Extension entry point
 ├── mcp/
 │   ├── index.ts      # MCP server implementation
-│   └── tools.ts      # Tool registrations
+│   ├── tools.ts      # Tool registrations
+│   └── buffer-manager.ts # Intelligent buffer system
 ├── lsp/
 │   ├── hover.ts          # Hover information
 │   ├── completion.ts     # Code completions

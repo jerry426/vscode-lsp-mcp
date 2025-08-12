@@ -91,23 +91,39 @@ def test_all_tools_detailed():
         "character": 23  # On 'getHover'
     })
     
-    if hover and len(hover) > 0:
-        print(f"✓ Found {len(hover)} hover result(s)")
-        for i, h in enumerate(hover[:2], 1):  # Show first 2
-            print(f"\n  Hover #{i}:")
-            if 'range' in h:
-                r = h['range']
-                print(f"    Range: Line {r['start']['line']}:{r['start']['character']} to {r['end']['line']}:{r['end']['character']}")
-            if 'contents' in h:
-                for j, content in enumerate(h['contents'][:3], 1):  # First 3 contents
-                    if isinstance(content, dict):
-                        kind = content.get('kind', 'unknown')
-                        value = content.get('value', '')
-                        lang = content.get('language', '')
-                        print(f"    Content {j} ({kind}{' ' + lang if lang else ''}):")
-                        # Wrap long content
-                        wrapped = textwrap.fill(value, width=50, initial_indent="      ", subsequent_indent="      ")
-                        print(truncate(wrapped, 200))
+    if hover:
+        if isinstance(hover, list) and len(hover) > 0:
+            print(f"✓ Found {len(hover)} hover result(s)")
+            for i, h in enumerate(hover[:2], 1):  # Show first 2
+                print(f"\n  Hover #{i}:")
+                if 'range' in h:
+                    r = h['range']
+                    print(f"    Range: Line {r['start']['line']}:{r['start']['character']} to {r['end']['line']}:{r['end']['character']}")
+                if 'contents' in h:
+                    contents = h['contents']
+                    if isinstance(contents, list):
+                        for j, content in enumerate(contents[:3], 1):  # First 3 contents
+                            if isinstance(content, dict):
+                                kind = content.get('kind', 'unknown')
+                                value = content.get('value', '')
+                                lang = content.get('language', '')
+                                print(f"    Content {j} ({kind}{' ' + lang if lang else ''}):")
+                                # Wrap long content
+                                wrapped = textwrap.fill(value, width=50, initial_indent="      ", subsequent_indent="      ")
+                                print(truncate(wrapped, 200))
+                    elif isinstance(contents, str):
+                        print(f"    Content: {truncate(contents, 200)}")
+        elif isinstance(hover, dict):
+            # Might be a buffered response or single hover item
+            if hover.get('type') == 'buffered_response':
+                print("✓ Hover results were buffered")
+                print(f"    • Total items: {hover.get('metadata', {}).get('itemCount', 'unknown')}")
+            else:
+                print("✓ Found hover result")
+                if 'contents' in hover:
+                    print(f"    Content: {truncate(str(hover['contents']), 200)}")
+        else:
+            print("✗ Unexpected hover format")
     else:
         print("✗ No hover results")
     
@@ -119,16 +135,35 @@ def test_all_tools_detailed():
         "character": 37  # After 'new vscode.'
     })
     
-    if completions and len(completions) > 0:
-        print(f"✓ Found {len(completions)} completion(s)")
-        print("\n  Top 10 completions:")
-        for i, comp in enumerate(completions[:10], 1):
-            label = comp.get('label', 'unknown')
-            kind = comp.get('kind', '')
-            detail = comp.get('detail', '')
-            print(f"    {i:2}. {label:30} {f'(kind: {kind})' if kind else ''}")
-            if detail:
-                print(f"        Detail: {truncate(detail, 50)}")
+    if completions:
+        # Handle buffered response
+        if isinstance(completions, dict) and completions.get('type') == 'buffered_response':
+            print("✓ Completions were buffered")
+            metadata = completions.get('metadata', {})
+            print(f"    • Total items: {metadata.get('itemCount', 'unknown')}")
+            preview = completions.get('preview', [])
+            if isinstance(preview, dict):
+                # Smart preview for completions
+                print(f"    • Total completions: {preview.get('totalCompletions', 0)}")
+                by_category = preview.get('byCategory', {})
+                for category, items in list(by_category.items())[:5]:
+                    print(f"    • {category}: {items.get('count', 0)} items")
+            elif isinstance(preview, list):
+                for i, comp in enumerate(preview[:10], 1):
+                    label = comp.get('label', 'unknown')
+                    print(f"    {i:2}. {label}")
+        elif isinstance(completions, list) and len(completions) > 0:
+            print(f"✓ Found {len(completions)} completion(s)")
+            print("\n  Top 10 completions:")
+            for i, comp in enumerate(completions[:10], 1):
+                label = comp.get('label', 'unknown')
+                kind = comp.get('kind', '')
+                detail = comp.get('detail', '')
+                print(f"    {i:2}. {label:30} {f'(kind: {kind})' if kind else ''}")
+                if detail:
+                    print(f"        Detail: {truncate(detail, 50)}")
+        else:
+            print("✗ Unexpected completion format")
     else:
         print("✗ No completions")
     
@@ -141,13 +176,19 @@ def test_all_tools_detailed():
         "character": 10  # On 'logger'
     })
     
-    if definition and len(definition) > 0:
-        print(f"✓ Found {len(definition)} definition(s)")
-        for i, def_loc in enumerate(definition[:5], 1):  # Show first 5
-            uri = def_loc['uri'].split('/')[-1]  # Just filename
-            r = def_loc['range']
-            print(f"    {i}. {uri}")
-            print(f"       Line {r['start']['line']}:{r['start']['character']} to {r['end']['line']}:{r['end']['character']}")
+    if definition:
+        if isinstance(definition, list) and len(definition) > 0:
+            print(f"✓ Found {len(definition)} definition(s)")
+            for i, def_loc in enumerate(definition[:5], 1):  # Show first 5
+                uri = def_loc['uri'].split('/')[-1]  # Just filename
+                r = def_loc['range']
+                print(f"    {i}. {uri}")
+                print(f"       Line {r['start']['line']}:{r['start']['character']} to {r['end']['line']}:{r['end']['character']}")
+        elif isinstance(definition, dict) and definition.get('type') == 'buffered_response':
+            print("✓ Definitions were buffered")
+            print(f"    • Total items: {definition.get('metadata', {}).get('itemCount', 'unknown')}")
+        else:
+            print("✗ Unexpected definition format")
     else:
         print("✗ No definitions found")
     
@@ -159,24 +200,34 @@ def test_all_tools_detailed():
         "character": 10  # On 'logger'
     })
     
-    if references and len(references) > 0:
-        print(f"✓ Found {len(references)} reference(s) to 'logger'")
-        # Group by file
-        files = {}
-        for ref in references:
-            filename = ref['uri'].split('/')[-1]
-            if filename not in files:
-                files[filename] = []
-            r = ref['range']['start']
-            files[filename].append(f"{r['line']}:{r['character']}")
-        
-        print("\n  References by file:")
-        for filename, positions in list(files.items())[:5]:  # First 5 files
-            # Sort positions by line number for readability
-            sorted_positions = sorted(positions, key=lambda p: int(p.split(':')[0]))
-            print(f"    • {filename}: {', '.join(sorted_positions[:5])}")
-            if len(positions) > 5:
-                print(f"      ... and {len(positions) - 5} more")
+    if references:
+        if isinstance(references, list) and len(references) > 0:
+            print(f"✓ Found {len(references)} reference(s) to 'logger'")
+            # Group by file
+            files = {}
+            for ref in references:
+                filename = ref['uri'].split('/')[-1]
+                if filename not in files:
+                    files[filename] = []
+                r = ref['range']['start']
+                files[filename].append(f"{r['line']}:{r['character']}")
+            
+            print("\n  References by file:")
+            for filename, positions in list(files.items())[:5]:  # First 5 files
+                # Sort positions by line number for readability
+                sorted_positions = sorted(positions, key=lambda p: int(p.split(':')[0]))
+                print(f"    • {filename}: {', '.join(sorted_positions[:5])}")
+                if len(positions) > 5:
+                    print(f"      ... and {len(positions) - 5} more")
+        elif isinstance(references, dict) and references.get('type') == 'buffered_response':
+            print("✓ References were buffered")
+            metadata = references.get('metadata', {})
+            print(f"    • Total references: {metadata.get('itemCount', 'unknown')}")
+            preview = references.get('preview', {})
+            if isinstance(preview, dict):
+                print(f"    • Files affected: {preview.get('fileCount', 'unknown')}")
+        else:
+            print("✗ Unexpected references format")
     else:
         print("✗ No references found")
     
@@ -188,15 +239,21 @@ def test_all_tools_detailed():
         "character": 32  # On 'Error'
     })
     
-    if implementations and len(implementations) > 0:
-        print(f"✓ Found {len(implementations)} implementation(s) of Error class")
-        print("\n  Sample implementations:")
-        for i, impl in enumerate(implementations[:8], 1):  # Show first 8
-            uri = impl['uri'].split('/')[-1]
-            r = impl['range']
-            line = r['start']['line']
-            char = r['start']['character']
-            print(f"    {i}. {uri:40} line {line}:{char}")
+    if implementations:
+        if isinstance(implementations, list) and len(implementations) > 0:
+            print(f"✓ Found {len(implementations)} implementation(s) of Error class")
+            print("\n  Sample implementations:")
+            for i, impl in enumerate(implementations[:8], 1):  # Show first 8
+                uri = impl['uri'].split('/')[-1]
+                r = impl['range']
+                line = r['start']['line']
+                char = r['start']['character']
+                print(f"    {i}. {uri:40} line {line}:{char}")
+        elif isinstance(implementations, dict) and implementations.get('type') == 'buffered_response':
+            print("✓ Implementations were buffered")
+            print(f"    • Total items: {implementations.get('metadata', {}).get('itemCount', 'unknown')}")
+        else:
+            print("✗ Unexpected implementations format")
     else:
         print("✗ No implementations found")
     
@@ -206,51 +263,87 @@ def test_all_tools_detailed():
         "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/tools.ts"
     })
     
-    if doc_symbols and len(doc_symbols) > 0:
-        print(f"✓ Found {len(doc_symbols)} top-level symbol(s)")
-        
-        # Count symbol types
-        def count_symbols(symbols, counts=None):
-            if counts is None:
-                counts = {}
-            for sym in symbols:
+    if doc_symbols:
+        # Handle buffered response
+        if isinstance(doc_symbols, dict) and doc_symbols.get('type') == 'buffered_response':
+            print("✓ Document symbols were buffered")
+            metadata = doc_symbols.get('metadata', {})
+            print(f"    • Total symbols: {metadata.get('itemCount', 'unknown')}")
+            print(f"    • Response size: {metadata.get('totalBytes', 0)} bytes")
+            print(f"    • Truncated at depth: {metadata.get('truncatedAtDepth', 'N/A')}")
+            
+            preview = doc_symbols.get('preview', {})
+            if isinstance(preview, dict):
+                # Handle dictionary preview format
+                items = preview.get('items', [])
+                total = preview.get('totalItems', len(items))
+                if items:
+                    print(f"\n  Preview of top-level symbols ({len(items)} of {total} shown):")
+                    for i, sym in enumerate(items[:5], 1):
+                        if isinstance(sym, dict):
+                            name = sym.get('name', 'unknown')
+                            kind = sym.get('kind', 'unknown')
+                            children_count = len(sym.get('children', []))
+                            print(f"    {i}. {name} ({kind}) - {children_count} children")
+            elif isinstance(preview, list) and preview:
+                # Handle list preview format
+                print(f"\n  Preview of top-level symbols ({len(preview)} shown):")
+                for i, sym in enumerate(preview[:5], 1):
+                    if isinstance(sym, dict):
+                        name = sym.get('name', 'unknown')
+                        kind = sym.get('kind', 'unknown')
+                        children_count = len(sym.get('children', []))
+                        print(f"    {i}. {name} ({kind}) - {children_count} children")
+        elif isinstance(doc_symbols, list) and len(doc_symbols) > 0:
+            print(f"✓ Found {len(doc_symbols)} top-level symbol(s)")
+            
+            # Count symbol types
+            def count_symbols(symbols, counts=None):
+                if counts is None:
+                    counts = {}
+                for sym in symbols:
+                    if isinstance(sym, dict):
+                        kind = sym.get('kind', 'Unknown')
+                        counts[kind] = counts.get(kind, 0) + 1
+                        if 'children' in sym and sym['children']:
+                            count_symbols(sym['children'], counts)
+                return counts
+            
+            type_counts = count_symbols(doc_symbols)
+            print(f"\n  Symbol types: {type_counts}")
+            
+            # Show symbol hierarchy
+            print("\n  File structure:")
+            def print_symbol(sym, indent=0):
+                if not isinstance(sym, dict):
+                    return
+                prefix = "  " * (indent + 2)
                 kind = sym.get('kind', 'Unknown')
-                counts[kind] = counts.get(kind, 0) + 1
+                name = sym.get('name', 'unnamed')
+                line = sym.get('range', {}).get('start', {}).get('line', 0)
+                
+                # Truncate long names
+                if len(name) > 40:
+                    name = name[:37] + "..."
+                
+                print(f"{prefix}├─ {kind}: {name} (line {line + 1})")
+                
+                # Show first few children
                 if 'children' in sym and sym['children']:
-                    count_symbols(sym['children'], counts)
-            return counts
-        
-        type_counts = count_symbols(doc_symbols)
-        print(f"\n  Symbol types: {type_counts}")
-        
-        # Show symbol hierarchy
-        print("\n  File structure:")
-        def print_symbol(sym, indent=0):
-            prefix = "  " * (indent + 2)
-            kind = sym.get('kind', 'Unknown')
-            name = sym.get('name', 'unnamed')
-            line = sym.get('range', {}).get('start', {}).get('line', 0)
+                    children = sym['children'][:3]  # Limit to first 3 children
+                    for child in children:
+                        print_symbol(child, indent + 1)
+                    if len(sym['children']) > 3:
+                        print(f"{prefix}  └─ ... and {len(sym['children']) - 3} more")
             
-            # Truncate long names
-            if len(name) > 40:
-                name = name[:37] + "..."
+            # Show first few top-level symbols
+            for symbol in doc_symbols[:5]:
+                print_symbol(symbol)
             
-            print(f"{prefix}├─ {kind}: {name} (line {line + 1})")
-            
-            # Show first few children
-            if 'children' in sym and sym['children']:
-                children = sym['children'][:3]  # Limit to first 3 children
-                for child in children:
-                    print_symbol(child, indent + 1)
-                if len(sym['children']) > 3:
-                    print(f"{prefix}  └─ ... and {len(sym['children']) - 3} more")
-        
-        # Show first few top-level symbols
-        for symbol in doc_symbols[:5]:
-            print_symbol(symbol)
-        
-        if len(doc_symbols) > 5:
-            print(f"\n  ... and {len(doc_symbols) - 5} more top-level symbols")
+            if len(doc_symbols) > 5:
+                print(f"\n  ... and {len(doc_symbols) - 5} more top-level symbols")
+        else:
+            print("✗ Unexpected document symbols format")
     else:
         print("✗ No document symbols found")
     
@@ -392,10 +485,85 @@ def test_all_tools_detailed():
     else:
         print("✗ Rename failed")
     
+    # Test 10: BUFFER SYSTEM
+    print_section("10. BUFFER SYSTEM - Large Response Handling")
+    
+    # First, trigger a large response that should be buffered
+    print("\n  Testing buffered response with large document symbols...")
+    large_doc_symbols = call_mcp_tool("get_document_symbols", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/buffer-manager.ts"
+    })
+    
+    if large_doc_symbols:
+        # Check if it's a buffered response
+        if isinstance(large_doc_symbols, dict) and large_doc_symbols.get('type') == 'buffered_response':
+            print("✓ Response was buffered!")
+            metadata = large_doc_symbols.get('metadata', {})
+            print(f"    • Total tokens: {metadata.get('totalTokens', 'unknown')}")
+            print(f"    • Total bytes: {metadata.get('totalBytes', 'unknown')}")
+            print(f"    • Item count: {metadata.get('itemCount', 'unknown')}")
+            print(f"    • Truncated at depth: {metadata.get('truncatedAtDepth', 'N/A')}")
+            
+            bufferId = large_doc_symbols.get('bufferId')
+            if bufferId:
+                print(f"\n    Buffer ID: {bufferId}")
+                
+                # Test retrieve_buffer
+                print("\n  Testing retrieve_buffer tool...")
+                full_data = call_mcp_tool("retrieve_buffer", {
+                    "bufferId": bufferId
+                })
+                
+                if full_data:
+                    print(f"✓ Successfully retrieved full data!")
+                    print(f"    • Retrieved {len(full_data)} symbols")
+                    # Show first few symbols
+                    for i, sym in enumerate(full_data[:3], 1):
+                        print(f"      {i}. {sym.get('name', 'unknown')} ({sym.get('kind', 'unknown')})")
+                else:
+                    print("✗ Failed to retrieve buffer")
+            
+            # Show preview
+            preview = large_doc_symbols.get('preview', {})
+            if isinstance(preview, dict):
+                # Handle dictionary preview format
+                items = preview.get('items', [])
+                total = preview.get('totalItems', len(items))
+                if items:
+                    print(f"\n  Smart preview (first {min(3, len(items))} of {total} items):")
+                    for i, item in enumerate(items[:3], 1):
+                        if isinstance(item, dict):
+                            print(f"    {i}. {item.get('name', 'unknown')} ({item.get('kind', 'unknown')})")
+            elif isinstance(preview, list) and preview:
+                # Handle list preview format
+                print(f"\n  Smart preview (first {min(3, len(preview))} items):")
+                for i, item in enumerate(preview[:3], 1):
+                    if isinstance(item, dict):
+                        print(f"    {i}. {item.get('name', 'unknown')} ({item.get('kind', 'unknown')})")
+        else:
+            print("✓ Response was not buffered (small enough)")
+            print(f"    • Found {len(large_doc_symbols)} symbols")
+    else:
+        print("✗ No document symbols returned")
+    
+    # Test 11: BUFFER STATS
+    print_section("11. GET_BUFFER_STATS - Buffer Statistics")
+    stats = call_mcp_tool("get_buffer_stats", {})
+    
+    if stats:
+        print("✓ Buffer statistics:")
+        print(f"    • Active buffers: {stats.get('activeBuffers', 0)}")
+        print(f"    • Total size: {stats.get('totalSize', 0)} bytes")
+        oldest = stats.get('oldestBuffer')
+        if oldest:
+            print(f"    • Oldest buffer age: {oldest}ms")
+    else:
+        print("✗ No buffer statistics available")
+    
     # Summary
     print_section("TEST SUMMARY")
     print("""
-    All 9 tools tested with detailed output:
+    All 11 tools tested with detailed output:
     • Hover: Shows documentation and type information
     • Completions: Lists available code suggestions
     • Definition: Locates symbol definitions
@@ -405,6 +573,8 @@ def test_all_tools_detailed():
     • Text Search: Searches for text patterns in files
     • Call Hierarchy: Traces incoming/outgoing function calls
     • Rename: Shows refactoring changes across files
+    • Buffer System: Handles large responses intelligently
+    • Buffer Stats: Monitors buffer usage
     """)
 
 if __name__ == "__main__":

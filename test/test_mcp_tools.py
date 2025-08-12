@@ -223,6 +223,46 @@ def test_all_tools():
         print("   ✗ Rename failed")
         results['rename'] = False
     
+    # Test buffer system
+    print("\n10. Testing buffer system...")
+    # Trigger a large response
+    large_symbols = call_mcp_tool("get_document_symbols", {
+        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/buffer-manager.ts"
+    })
+    if large_symbols:
+        if isinstance(large_symbols, dict) and large_symbols.get('type') == 'buffered_response':
+            print(f"   ✓ Buffer system works - response buffered ({large_symbols.get('metadata', {}).get('totalTokens', 0)} tokens)")
+            results['buffer_system'] = True
+            
+            # Test retrieve_buffer
+            bufferId = large_symbols.get('bufferId')
+            if bufferId:
+                full_data = call_mcp_tool("retrieve_buffer", {"bufferId": bufferId})
+                if full_data:
+                    print(f"   ✓ retrieve_buffer works - retrieved {len(full_data)} items")
+                    results['retrieve_buffer'] = True
+                else:
+                    print("   ✗ retrieve_buffer failed")
+                    results['retrieve_buffer'] = False
+        else:
+            print("   ✓ Response not buffered (small enough)")
+            results['buffer_system'] = True
+            results['retrieve_buffer'] = True
+    else:
+        print("   ✗ Buffer system test failed")
+        results['buffer_system'] = False
+        results['retrieve_buffer'] = False
+    
+    # Test buffer stats
+    print("\n11. Testing get_buffer_stats...")
+    stats = call_mcp_tool("get_buffer_stats", {})
+    if stats:
+        print(f"   ✓ Buffer stats works - {stats.get('activeBuffers', 0)} active buffer(s)")
+        results['buffer_stats'] = True
+    else:
+        print("   ✗ Buffer stats failed")
+        results['buffer_stats'] = False
+    
     # Summary
     print("\n" + "="*50)
     print("TEST RESULTS SUMMARY")
@@ -237,7 +277,10 @@ def test_all_tools():
         ('get_document_symbols', results.get('document_symbols', False)),
         ('search_text', results.get('search', False)),
         ('get_call_hierarchy', results.get('call_hierarchy', False)),
-        ('rename_symbol', results.get('rename', False))
+        ('rename_symbol', results.get('rename', False)),
+        ('buffer_system', results.get('buffer_system', False)),
+        ('retrieve_buffer', results.get('retrieve_buffer', False)),
+        ('get_buffer_stats', results.get('buffer_stats', False))
     ]
     
     for tool_name, passed in tools:

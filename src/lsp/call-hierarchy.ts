@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import { logger } from '../utils'
 import { withErrorHandling } from './errors'
 
 /**
@@ -23,7 +24,8 @@ export async function getCallHierarchy(
     // Try to ensure the document is loaded (might help with language server)
     try {
       await vscode.workspace.openTextDocument(parsedUri)
-    } catch {
+    }
+    catch {
       // Document might not exist or can't be opened, continue anyway
     }
 
@@ -45,23 +47,24 @@ export async function getCallHierarchy(
 
     // Get the first item (the symbol at the given position)
     const targetItem = items[0]
-    
+
     // If we got a module/workspace item instead of a function, it might mean wrong position
     if (targetItem.kind === vscode.SymbolKind.Module || targetItem.name === 'workspace') {
       // Try to return what we got anyway, but indicate it might not be the expected target
-      console.log(`Warning: Got module-level item instead of function at ${uri}:${line}:${character}`)
+      logger.warn(`Got module-level item instead of function at ${uri}:${line}:${character}`)
     }
 
     // Get incoming or outgoing calls based on direction
     let calls: vscode.CallHierarchyIncomingCall[] | vscode.CallHierarchyOutgoingCall[]
-    
+
     if (direction === 'incoming') {
       // Get incoming calls (who calls this function)
       calls = await vscode.commands.executeCommand<vscode.CallHierarchyIncomingCall[]>(
         'vscode.provideIncomingCalls',
         targetItem,
       )
-    } else {
+    }
+    else {
       // Get outgoing calls (what this function calls)
       calls = await vscode.commands.executeCommand<vscode.CallHierarchyOutgoingCall[]>(
         'vscode.provideOutgoingCalls',
@@ -110,8 +113,14 @@ function itemToJSON(item: vscode.CallHierarchyItem): any {
  * Convert a CallHierarchyCall to JSON format
  */
 function callToJSON(call: vscode.CallHierarchyIncomingCall | vscode.CallHierarchyOutgoingCall): any {
-  const result: any = {
-    from: itemToJSON(call.from),
+  const result: any = {}
+
+  // Handle incoming vs outgoing calls
+  if ('from' in call) {
+    result.from = itemToJSON(call.from)
+  }
+  else if ('to' in call) {
+    result.to = itemToJSON(call.to)
   }
 
   // Add call ranges (locations where the call happens)

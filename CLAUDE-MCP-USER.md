@@ -1,15 +1,47 @@
 # VSCode LSP MCP Tools Usage Guide
 
+> **Note for Claude Code**: You can always retrieve the latest version of this guide using the `get_instructions` tool. This ensures you have the most up-to-date usage information.
+
 ## 🚨 CRITICAL: Use MCP/LSP Tools for Code Navigation
 
 **This project has VSCode LSP MCP tools available. These MUST be your PRIMARY method for code navigation and understanding.**
 
 The MCP server provides direct access to VSCode's Language Server Protocol features, offering 100-1000x performance improvements over text-based searching with semantic understanding of code.
 
+## MCP Buffer System
+
+The extension includes an intelligent buffer system to prevent token overflow:
+
+### Key Features
+- **Automatic Size Detection**: Estimates token count (~4 chars/token)
+- **Smart Previews**: Tool-specific intelligent data summaries
+- **Depth Truncation**: Automatically limits deeply nested structures
+- **Buffer Storage**: Large responses stored with unique IDs for retrieval
+
+### Token Limits
+- **Maximum**: 2,500 tokens per response (~10KB JSON)
+- **Buffered responses return**: metadata + preview + bufferId
+- **Retrieve full data**: Use `retrieve_buffer` tool with the bufferId
+
+### Smart Preview Examples
+- **search_text**: Shows first, middle, and last results for better distribution
+- **get_document_symbols**: Prioritizes top-level symbols
+- **get_references**: Groups by file with counts
+- **get_completions**: Categorizes by completion type (method, property, etc.)
+
 ## MCP Server Connection
 
+### Single VSCode Window
 - **Server URL**: `http://127.0.0.1:9527/mcp`
-- **Auto-routing**: The proxy automatically routes to the correct VSCode instance based on workspace
+
+### Multiple VSCode Windows
+Each VSCode window runs on a different port. To find your workspace's port:
+
+```bash
+python3 test/find_mcp_servers.py
+```
+
+This shows all running MCP servers with their workspace paths. Use the URL for your specific project.
 
 ## Required: Use These MCP Tools FIRST
 
@@ -179,6 +211,25 @@ RIGHT ✅:
 - **Returns**: Incoming calls (callers) or outgoing calls (callees)
 - **Parameters**: Needs position + direction ("incoming" or "outgoing")
 
+### retrieve_buffer
+- **Purpose**: Retrieve full data from a buffered response
+- **Use when**: A response was too large and returned a bufferId
+- **Returns**: The complete original data
+- **Parameters**: Just needs the bufferId from the buffered response
+
+### get_buffer_stats
+- **Purpose**: Get statistics about currently buffered responses
+- **Use when**: Monitoring buffer usage or debugging
+- **Returns**: Active buffer count, total size, oldest buffer age
+- **Parameters**: None required
+
+### get_instructions
+- **Purpose**: Get comprehensive usage instructions for all MCP tools
+- **Use when**: Need to understand how to use the tools, best practices, or workflows
+- **Returns**: Complete contents of this guide (CLAUDE-MCP-USER.md)
+- **Parameters**: None required
+- **Note**: This is the single source of truth for tool usage
+
 ## Decision Tree
 
 ```
@@ -219,7 +270,7 @@ Need to find something in code?
 2. **Most tools need a starting position** - You must provide a file location where the symbol appears (line/character). Use `search_text` to find symbols by name across the workspace
 3. **URIs must be absolute** - Always use full file:// paths
 4. **Try MCP first, fall back to search** - Even if unsure, try MCP tools first
-5. **The proxy handles routing** - You don't need to worry about which VSCode instance
+5. **Port auto-increment** - If 9527 is busy, the extension tries 9528, 9529, etc.
 
 ## Integration Instructions for Your Project
 

@@ -12,5 +12,6 @@ node_modules
 temp
 src/generated
 .hidden
-.mcp_port
-mcp_workspace_id
+.lsp_mcp_port
+.lsp_mcp_workspace_id
+.lsp_mcp_status.json
