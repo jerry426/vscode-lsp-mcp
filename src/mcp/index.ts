@@ -1,12 +1,11 @@
-import { randomUUID } from 'node:crypto'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
 import express from 'express'
 import { Uri, window, workspace } from 'vscode'
 import { logger } from '../utils'
-import { addLspTools } from './tools'
 import { cleanupBuffers } from './buffer-manager'
+import { addLspTools } from './tools'
 
 // Map to store transports by session ID with metadata
 interface SessionInfo {
@@ -47,6 +46,10 @@ let cleanupTimer: NodeJS.Timeout | null = null
 
 // Track the current port globally
 let currentPort: number = 0
+
+// Singleton server for sessionless mode
+let singletonServer: McpServer | null = null
+let singletonTransport: StreamableHTTPServerTransport | null = null
 
 export async function startMcp() {
   const config = workspace.getConfiguration('lsp-mcp')
@@ -90,6 +93,24 @@ export async function startMcp() {
   const app = express()
   app.use(express.json())
 
+  // Endpoint to get current session (for reconnection)
+  app.get('/session-info', (req, res) => {
+    if (singletonTransport && singletonTransport.sessionId) {
+      res.json({
+        sessionId: singletonTransport.sessionId,
+        mode: 'singleton',
+        initialized: true,
+      })
+    }
+    else {
+      res.json({
+        sessionId: null,
+        mode: 'not-initialized',
+        initialized: false,
+      })
+    }
+  })
+
   // Endpoint to identify the workspace
   app.get('/workspace-info', async (req, res) => {
     const workspaceFolder = workspace.workspaceFolders?.[0]
@@ -120,56 +141,96 @@ export async function startMcp() {
 
   // Handle POST requests for client-to-server communication
   app.post('/mcp', async (req, res) => {
-    // Check for existing session ID
+    // Check for existing session ID (optional, for backwards compatibility)
     const sessionId = req.headers['mcp-session-id'] as string | undefined
     let transport: StreamableHTTPServerTransport
 
+    // Option 1: Session ID provided and valid (backwards compatibility)
     if (sessionId && sessions[sessionId]) {
       // Reuse existing transport and update activity
       sessions[sessionId].lastActivity = Date.now()
       transport = sessions[sessionId].transport
     }
-    else if (!sessionId && isInitializeRequest(req.body)) {
-      // New initialization request
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (sessionId) => {
-          // Store the transport with metadata
-          const now = Date.now()
-          sessions[sessionId] = {
-            transport,
-            createdAt: now,
-            lastActivity: now,
-          }
-        },
-        allowedHosts: ['127.0.0.1', 'localhost'],
-      })
+    // Option 2: Initialize request - create or reuse singleton
+    else if (isInitializeRequest(req.body)) {
+      // Use singleton for sessionless mode
+      if (!singletonTransport || !singletonServer) {
+        logger.info('Creating sessionless MCP server singleton')
 
-      // Clean up transport when closed
-      transport.onclose = () => {
-        if (transport.sessionId) {
-          delete sessions[transport.sessionId]
+        // Create transport without session management
+        singletonTransport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => 'sessionless',
+          onsessioninitialized: (actualSessionId) => {
+            logger.info(`Sessionless MCP transport initialized with ID: ${actualSessionId}`)
+            // Store the singleton session for reuse
+            if (actualSessionId && singletonTransport) {
+              sessions[actualSessionId] = {
+                transport: singletonTransport,
+                createdAt: Date.now(),
+                lastActivity: Date.now(),
+              }
+            }
+          },
+          allowedHosts: ['127.0.0.1', 'localhost'],
+        })
+
+        singletonServer = new McpServer({
+          name: 'lsp-server',
+          version: '0.0.2',
+        })
+
+        // Add LSP tools to the server
+        addLspTools(singletonServer)
+
+        // Connect to the MCP server
+        await singletonServer.connect(singletonTransport)
+      }
+      else {
+        // Singleton already exists - log for debugging
+        logger.info('Reusing existing singleton for initialize request')
+      }
+      transport = singletonTransport
+    }
+    // Option 3: Regular request without session - use singleton if available
+    else if (!sessionId && singletonTransport) {
+      // Sessionless mode - use singleton
+      transport = singletonTransport
+      // Add the session ID to the request headers for the transport
+      if (singletonTransport.sessionId) {
+        req.headers['mcp-session-id'] = singletonTransport.sessionId
+      }
+    }
+    // Option 4: Session ID provided but invalid - try to use singleton as fallback
+    else if (sessionId && !sessions[sessionId]) {
+      if (singletonTransport) {
+        // Fallback to singleton if session ID is invalid
+        logger.warn(`Invalid session ID '${sessionId}' provided, falling back to singleton`)
+        transport = singletonTransport
+        // IMPORTANT: Replace the invalid session ID with the correct one
+        // This allows the transport.handleRequest to work properly
+        if (singletonTransport.sessionId) {
+          req.headers['mcp-session-id'] = singletonTransport.sessionId
         }
       }
-
-      const server = new McpServer({
-        name: 'lsp-server',
-        version: '0.0.2',
-      })
-
-      // Add LSP tools to the server
-      addLspTools(server)
-
-      // Connect to the MCP server
-      await server.connect(transport)
+      else {
+        res.status(400).json({
+          jsonrpc: '2.0',
+          error: {
+            code: -32000,
+            message: 'Invalid session ID and no singleton available. Send initialize request first.',
+          },
+          id: null,
+        })
+        return
+      }
     }
+    // Option 5: No session and no singleton - need initialization
     else {
-      // Invalid request
       res.status(400).json({
         jsonrpc: '2.0',
         error: {
           code: -32000,
-          message: 'Bad Request: No valid session ID provided',
+          message: 'Not initialized. Send initialize request first.',
         },
         id: null,
       })
@@ -239,6 +300,13 @@ export function stopMcp() {
 
   // Clean up buffer manager
   cleanupBuffers()
+
+  // Clean up singleton
+  if (singletonTransport && singletonTransport.close) {
+    singletonTransport.close()
+  }
+  singletonTransport = null
+  singletonServer = null
 
   // Close all active sessions
   for (const sessionInfo of Object.values(sessions)) {

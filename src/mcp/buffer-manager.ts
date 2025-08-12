@@ -60,7 +60,7 @@ const responseBuffers = new Map<string, {
 const bufferCleanupInterval = setInterval(() => {
   const now = Date.now()
   let expiredCount = 0
-  
+
   for (const [id, buffer] of responseBuffers.entries()) {
     if (now - buffer.timestamp > DEFAULT_CONFIG.bufferTTL) {
       responseBuffers.delete(id)
@@ -68,7 +68,7 @@ const bufferCleanupInterval = setInterval(() => {
       logger.info(`Expired buffer ${id}`)
     }
   }
-  
+
   // Log cleanup summary if any buffers were removed
   if (expiredCount > 0) {
     logger.info(`Buffer cleanup: removed ${expiredCount} expired buffers, ${responseBuffers.size} remaining`)
@@ -95,13 +95,13 @@ function enforceBufferLimits(newBufferSize: number) {
       logger.warn(`Buffer limit reached (${MAX_BUFFERS}), removed oldest buffer: ${oldestId}`)
     }
   }
-  
+
   // Check total size
   let totalSize = newBufferSize
   for (const buffer of responseBuffers.values()) {
     totalSize += buffer.metadata.totalBytes
   }
-  
+
   // If exceeding size limit, remove oldest buffers until within limit
   while (totalSize > MAX_TOTAL_SIZE && responseBuffers.size > 0) {
     const oldestId = findOldestBuffer()
@@ -112,7 +112,8 @@ function enforceBufferLimits(newBufferSize: number) {
         responseBuffers.delete(oldestId)
         logger.warn(`Total buffer size exceeded (${Math.round(totalSize / 1024 / 1024)}MB), removed buffer: ${oldestId}`)
       }
-    } else {
+    }
+    else {
       break
     }
   }
@@ -124,14 +125,14 @@ function enforceBufferLimits(newBufferSize: number) {
 function findOldestBuffer(): string | undefined {
   let oldestId: string | undefined
   let oldestTime = Date.now()
-  
+
   for (const [id, buffer] of responseBuffers.entries()) {
     if (buffer.timestamp < oldestTime) {
       oldestTime = buffer.timestamp
       oldestId = id
     }
   }
-  
+
   return oldestId
 }
 
@@ -466,10 +467,10 @@ export function bufferResponse(
   let bufferId: string | undefined
   if (needsBuffering) {
     bufferId = generateBufferId(toolName)
-    
+
     // Enforce buffer limits to prevent memory exhaustion
     enforceBufferLimits(bytes)
-    
+
     responseBuffers.set(bufferId, {
       data,
       timestamp: Date.now(),
