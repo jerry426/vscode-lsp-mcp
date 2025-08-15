@@ -54,7 +54,7 @@ def main():
     print("After running the command above:")
     print("="*60)
     print("1. Make sure VSCode is running with this project open")
-    print("2. The LSP MCP extension should show as active in the status bar")
+    print("2. The Token Saver MCP extension should show as active in the status bar")
     print(f"3. The MCP server will be available at port {port}")
     print("\nNote: Each project needs a unique port number in its .lsp_mcp_port file")
 

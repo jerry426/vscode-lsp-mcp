@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Find all running VSCode LSP MCP servers on this machine.
+Find all running Token Saver MCP servers on this machine.
 This helps identify which port to use for which VSCode instance.
 """
 import requests
@@ -56,7 +56,7 @@ def find_all_mcp_servers(start_port=9527, end_port=9537):
     """Scan a range of ports for MCP servers"""
     servers = []
     
-    print(f"Scanning ports {start_port}-{end_port} for VSCode LSP MCP servers...\n")
+    print(f"Scanning ports {start_port}-{end_port} for Token Saver MCP servers...\n")
     
     for port in range(start_port, end_port + 1):
         result = check_mcp_server(port)
@@ -75,12 +75,12 @@ def main():
     servers = find_all_mcp_servers()
     
     if not servers:
-        print("No VSCode LSP MCP servers found.")
+        print("No Token Saver MCP servers found.")
         print("\nTroubleshooting:")
         print("1. Make sure VSCode is running")
-        print("2. Check that the LSP MCP extension is installed and enabled")
+        print("2. Check that the Token Saver MCP extension is installed and enabled")
         print("3. Try reloading the VSCode window (Cmd/Ctrl+R)")
-        print("4. Check VSCode Output panel for 'LSP MCP' to see if server started")
+        print("4. Check VSCode Output panel for 'Token Saver MCP' to see if server started")
     else:
         print("=" * 60)
         print(f"Found {len(servers)} MCP server(s):\n")

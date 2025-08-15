@@ -1,6 +1,6 @@
 # Buffer Handling Guide for AI Assistants
 
-This guide explains how to handle buffered responses from the VSCode LSP MCP extension.
+This guide explains how to handle buffered responses from the Token Saver MCP extension.
 
 ## Understanding Buffered Responses
 

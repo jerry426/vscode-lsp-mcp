@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive test suite for VSCode LSP MCP extension
+Comprehensive test suite for Token Saver MCP extension
 Tests all MCP tools after installation
 """
 import requests
@@ -67,7 +67,7 @@ def call_mcp_tool(tool_name, arguments):
 def test_all_tools():
     """Test all MCP tools"""
     print("="*50)
-    print("VSCode LSP MCP Extension Test Suite v0.0.6")
+    print("Token Saver MCP Extension Test Suite v0.0.6")
     print("="*50)
     
     results = {}

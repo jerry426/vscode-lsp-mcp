@@ -56,7 +56,7 @@ export async function startMcp() {
   const isMcpEnabled = config.get('enabled', true)
 
   if (!isMcpEnabled) {
-    window.showInformationMessage('LSP MCP server is disabled by configuration.')
+    window.showInformationMessage('Token Saver MCP server is disabled by configuration.')
     return
   }
 
@@ -279,7 +279,7 @@ function startServer(app: express.Express, initialPort: number, maxRetries: numb
 
   const tryListen = () => {
     const server = app.listen(currentPort, () => {
-      window.showInformationMessage(`LSP MCP server started on port ${currentPort}`)
+      window.showInformationMessage(`Token Saver MCP server started on port ${currentPort}`)
       logger.info(`MCP server running at http://127.0.0.1:${currentPort}/mcp`)
     })
 
@@ -292,7 +292,7 @@ function startServer(app: express.Express, initialPort: number, maxRetries: numb
         tryListen()
       }
       else {
-        window.showErrorMessage(`Failed to start LSP MCP server: ${err.message}`)
+        window.showErrorMessage(`Failed to start Token Saver MCP server: ${err.message}`)
       }
     })
   }

@@ -33,17 +33,17 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "LSP MCP Server Configuration",
+      "title": "Token Saver MCP Server Configuration",
       "properties": {
         "lsp-mcp.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Enable or disable the LSP MCP server."
+          "description": "Enable or disable the Token Saver MCP server."
         },
         "lsp-mcp.port": {
           "type": "number",
           "default": 9527,
-          "description": "Port for the LSP MCP server."
+          "description": "Port for the Token Saver MCP server."
         },
         "lsp-mcp.maxRetries": {
           "type": "number",

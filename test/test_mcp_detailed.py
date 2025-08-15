@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Detailed test suite for VSCode LSP MCP extension
+Detailed test suite for Token Saver MCP extension
 Shows actual content returned by each tool
 """
 import requests
@@ -80,7 +80,7 @@ def truncate(text, length=100):
 def test_all_tools_detailed():
     """Test all MCP tools with detailed output"""
     print("\n" + "="*60)
-    print("  VSCode LSP MCP - DETAILED TEST RESULTS")
+    print("  Token Saver MCP - DETAILED TEST RESULTS")
     print("="*60)
     
     # Test 1: HOVER

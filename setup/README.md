@@ -1,6 +1,6 @@
-# VSCode LSP MCP - Setup Tools
+# Token Saver MCP - Setup Tools
 
-This directory contains all setup and management tools for the VSCode LSP MCP extension.
+This directory contains all setup and management tools for the Token Saver MCP extension.
 
 ## Main Entry Point
 
@@ -68,7 +68,7 @@ If MCP tools aren't working:
 1. Check server is running: `./mcp status`
 2. Verify port configuration: `cat .lsp_mcp_port`
 3. Test server directly: `curl http://127.0.0.1:PORT/workspace-info`
-4. Check VSCode output panel for "LSP MCP"
+4. Check VSCode output panel for "Token Saver MCP"
 5. Reload VSCode window if needed
 
 ## File Naming Convention

@@ -319,7 +319,7 @@ export function addLspTools(server: McpServer) {
     'get_instructions',
     {
       title: 'Get Usage Instructions',
-      description: 'Get comprehensive instructions on how to use the VSCode LSP MCP tools. Returns the complete usage guide including tool descriptions, parameters, workflows, and best practices.',
+      description: 'Get comprehensive instructions on how to use the Token Saver MCP tools. Returns the complete usage guide including tool descriptions, parameters, workflows, and best practices.',
       inputSchema: {},
     },
     async () => {
