@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { logger } from '../utils'
+import { ensureLspActivated } from './ensure-lsp-activated'
 import { withErrorHandling } from './errors'
 
 /**
@@ -21,6 +22,9 @@ export async function getReferences(
     'get references',
     async () => {
       logger.info(`Getting references: ${uri} line:${line} char:${character}`)
+
+      // Ensure LSP is activated for this file type
+      await ensureLspActivated(uri)
 
       // Parse URI directly without requiring document to be open
       const parsedUri = vscode.Uri.parse(uri)

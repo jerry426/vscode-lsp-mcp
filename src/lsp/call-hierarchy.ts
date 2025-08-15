@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { logger } from '../utils'
+import { ensureLspActivated } from './ensure-lsp-activated'
 import { withErrorHandling } from './errors'
 
 /**
@@ -18,16 +19,11 @@ export async function getCallHierarchy(
   direction: 'incoming' | 'outgoing' = 'incoming',
 ): Promise<any> {
   return withErrorHandling('getCallHierarchy', async () => {
+    // Ensure LSP is activated for this file type
+    await ensureLspActivated(uri)
+
     const parsedUri = vscode.Uri.parse(uri)
     const position = new vscode.Position(line, character)
-
-    // Try to ensure the document is loaded (might help with language server)
-    try {
-      await vscode.workspace.openTextDocument(parsedUri)
-    }
-    catch {
-      // Document might not exist or can't be opened, continue anyway
-    }
 
     // First, prepare the call hierarchy (get the item at position)
     const items = await vscode.commands.executeCommand<vscode.CallHierarchyItem[]>(
