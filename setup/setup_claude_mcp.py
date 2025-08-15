@@ -42,12 +42,12 @@ def main():
     print("Run this command to add/update the MCP server in Claude:")
     print("="*60 + "\n")
     
-    # Generate the Claude command - use consistent name "vscode-lsp" for all projects
+    # Generate the Claude command - use consistent name "token-saver" for all projects
     # This allows switching between projects by just updating the port
-    command = f"claude mcp add --transport http vscode-lsp http://127.0.0.1:{port}/mcp"
+    command = f"claude mcp add --transport http token-saver http://127.0.0.1:{port}/mcp"
     
     print(command)
-    print(f"\nNote: This will configure Claude to use the VSCode LSP server on port {port}")
+    print(f"\nNote: This will configure Claude to use the Token Saver MCP server on port {port}")
     print(f"      for the '{project_name}' project")
     
     print("\n" + "="*60)

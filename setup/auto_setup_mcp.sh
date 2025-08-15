@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# VSCode LSP MCP Auto-Setup Script
+# Token Saver MCP Auto-Setup Script
 # This script automatically configures everything needed for the MCP extension
 
 set -e
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 PROJECT_DIR="${1:-$(pwd)}"
 PROJECT_NAME=$(basename "$PROJECT_DIR")
 
-echo -e "${BOLD}VSCode LSP MCP - Automatic Setup${NC}"
+echo -e "${BOLD}Token Saver MCP - Automatic Setup${NC}"
 echo "================================================"
 echo "Project: $PROJECT_NAME"
 echo "Path: $PROJECT_DIR"
@@ -59,7 +59,7 @@ else
 fi
 
 # Step 4: Generate Claude command
-CLAUDE_CMD="claude mcp add --transport http vscode-lsp http://127.0.0.1:$PORT/mcp"
+CLAUDE_CMD="claude mcp add --transport http token-saver http://127.0.0.1:$PORT/mcp"
 
 # Step 5: Check if VSCode is running
 if pgrep -f "code.*$PROJECT_DIR" > /dev/null || pgrep -f "code-server.*$PROJECT_DIR" > /dev/null; then

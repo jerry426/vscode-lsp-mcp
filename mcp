@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# VSCode LSP MCP - Main Management Script
+# Token Saver MCP - Main Management Script
 # This is the entry point for all MCP setup and management tasks
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 show_help() {
-    echo -e "${BOLD}VSCode LSP MCP - Management Tool${NC}"
+    echo -e "${BOLD}Token Saver MCP - Management Tool${NC}"
     echo ""
     echo "Usage: ./mcp [command] [options]"
     echo ""

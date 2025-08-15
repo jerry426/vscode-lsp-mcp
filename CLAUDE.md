@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when DEVELOPING the VSCode LSP MCP extension.
+This file provides guidance to Claude Code (claude.ai/code) when DEVELOPING the Token Saver MCP extension.
 
 ## For MCP Tool Usage
 
@@ -10,7 +10,7 @@ When working on THIS codebase, you MUST follow the MCP tool usage guidelines in 
 
 ## Project Overview
 
-VSCode LSP MCP is a Visual Studio Code extension that bridges Language Server Protocol (LSP) features with Model Context Protocol (MCP), enabling AI assistants to access VSCode's language intelligence with 100-1000x performance improvements over text-based searching.
+Token Saver MCP is a Visual Studio Code extension that bridges Language Server Protocol (LSP) features with Model Context Protocol (MCP), enabling AI assistants to access VSCode's language intelligence with 100-1000x performance improvements over text-based searching, saving thousands of tokens per query.
 
 **Mission**: Expose VSCode's already-computed code intelligence to AI assistants, eliminating the need for expensive text-based searching while leveraging local machine's indexed language features.
 

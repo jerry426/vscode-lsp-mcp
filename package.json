@@ -1,15 +1,18 @@
 {
-  "name": "lsp-mcp",
-  "displayName": "LSP MCP",
-  "version": "0.0.13",
-  "description": "LSP MCP Server for VSCode",
-  "publisher": "CJL",
-  "author": "CJL <2662442385@qq.com>",
+  "name": "token-saver-mcp",
+  "displayName": "Token Saver MCP",
+  "version": "1.0.0",
+  "description": "Stop watching AI burn tokens on text searches. Get instant answers from VSCode's already-indexed code intelligence. 100x faster, 90% fewer tokens.",
+  "publisher": "jerry426",
+  "author": "Jerry Jackson <https://github.com/jerry426>",
+  "contributors": [
+    "CJL <2662442385@qq.com> (original author)"
+  ],
   "license": "MIT",
-  "homepage": "https://github.com/beixiyo/vsc-lsp-mcp",
+  "homepage": "https://github.com/jerry426/token-saver-mcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/beixiyo/vsc-lsp-mcp"
+    "url": "https://github.com/jerry426/token-saver-mcp"
   },
   "categories": [
     "Other"

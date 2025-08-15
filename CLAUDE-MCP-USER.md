@@ -1,10 +1,10 @@
-# VSCode LSP MCP Tools Usage Guide
+# Token Saver MCP Tools Usage Guide
 
 > **Note for Claude Code**: You can always retrieve the latest version of this guide using the `get_instructions` tool. This ensures you have the most up-to-date usage information.
 
 ## 🚨 CRITICAL: Use MCP/LSP Tools for Code Navigation
 
-**This project has VSCode LSP MCP tools available. These MUST be your PRIMARY method for code navigation and understanding.**
+**This project has Token Saver MCP tools available. These MUST be your PRIMARY method for code navigation and understanding.**
 
 The MCP server provides direct access to VSCode's Language Server Protocol features, offering 100-1000x performance improvements over text-based searching with semantic understanding of code.
 
@@ -276,7 +276,7 @@ Need to find something in code?
 
 To enable MCP tools for your project:
 
-1. Install the VSCode LSP MCP extension in VSCode
+1. Install the Token Saver MCP extension in VSCode
 2. Ensure the extension is running (check status bar)
 3. Add this guide to your project's CLAUDE.md or AI instructions
 4. The MCP server will be available at `http://127.0.0.1:9527/mcp`
