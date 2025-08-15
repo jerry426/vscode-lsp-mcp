@@ -186,8 +186,32 @@ export async function startMcp() {
         await singletonServer.connect(singletonTransport)
       }
       else {
-        // Singleton already exists - log for debugging
-        logger.info('Reusing existing singleton for initialize request')
+        // Singleton already exists - return success response for initialize
+        logger.info('Reusing existing singleton for initialize request - returning cached initialization')
+
+        // Return a successful initialization response
+        res.setHeader('Content-Type', 'text/event-stream')
+        res.setHeader('Cache-Control', 'no-cache')
+        res.setHeader('Connection', 'keep-alive')
+
+        const initResponse = {
+          jsonrpc: '2.0',
+          id: (req.body as any).id || 1,
+          result: {
+            protocolVersion: '2025-01-05',
+            capabilities: {
+              tools: true,
+            },
+            serverInfo: {
+              name: 'lsp-server',
+              version: '0.0.2',
+            },
+          },
+        }
+
+        res.write(`event: message\ndata: ${JSON.stringify(initResponse)}\n\n`)
+        res.end()
+        return
       }
       transport = singletonTransport
     }
