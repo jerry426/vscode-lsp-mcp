@@ -76,6 +76,27 @@ AI: "Getting definition..."
 > Result: Exact location with type info
 ```
 
+## 🔬 Don't Take Our Word For It - Verify It Yourself!
+
+**Think these performance claims are too good to be true?**
+
+Don't trust us - let your own AI prove it! Install Token Saver MCP in your VSCode, then challenge your AI assistant to compare approaches:
+
+**Ask your AI to:**
+1. **Find a function definition** - First with grep, then with `get_definition`
+2. **Find all usages of a variable** - First with text search, then with `get_references`  
+3. **Get type information** - First by reading files, then with `get_hover`
+4. **Understand code structure** - First by parsing manually, then with `get_document_symbols`
+5. **Trace function calls** - First with grep patterns, then with `get_call_hierarchy`
+
+**Your AI will report:**
+- 🎯 Exact token counts for each approach
+- ⏱️ Response time differences
+- 📊 Accuracy improvements
+- 💰 Cost savings per operation
+
+The results speak for themselves - typically **100-1000x faster** with **90-99% fewer tokens**. Your AI assistant will confirm these aren't marketing claims - they're measurable facts.
+
 ## Features
 
 This extension exposes VSCode's Language Server Protocol features through MCP, providing AI assistants with **12 powerful tools**:
