@@ -92,6 +92,7 @@ This extension exposes VSCode's Language Server Protocol features through MCP, p
 - **Buffer Retrieval** (`retrieve_buffer`) - Retrieve full data from buffered responses
 - **Buffer Statistics** (`get_buffer_stats`) - Monitor buffer system usage
 - **Get Instructions** (`get_instructions`) - Self-documenting API returns complete usage guide
+- **Supported Languages** (`get_supported_languages`) - Get all registered languages and their status
 
 ### Intelligent Buffer System
 
@@ -307,6 +308,12 @@ Returns: Active buffer count, total size, oldest buffer age
 {}  // No parameters required
 ```
 Returns: Complete CLAUDE-MCP-USER.md guide with all usage instructions
+
+#### `get_supported_languages`
+```json
+{}  // No parameters required
+```
+Returns: All languages registered in VSCode organized by category, active languages in workspace, and total count
 
 ## Configuration
 

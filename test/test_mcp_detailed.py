@@ -6,6 +6,7 @@ Shows actual content returned by each tool
 import requests
 import json
 import textwrap
+from test_utils import get_test_uri
 
 def call_mcp_tool(tool_name, arguments):
     """Call an MCP tool and parse the response"""
@@ -86,7 +87,7 @@ def test_all_tools_detailed():
     # Test 1: HOVER
     print_section("1. GET_HOVER - Documentation & Type Info")
     hover = call_mcp_tool("get_hover", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": 13,  # export async function getHover
         "character": 23  # On 'getHover'
     })
@@ -130,7 +131,7 @@ def test_all_tools_detailed():
     # Test 2: COMPLETIONS
     print_section("2. GET_COMPLETIONS - Code Suggestions")
     completions = call_mcp_tool("get_completions", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": 18,  # const position = new vscode.Position
         "character": 37  # After 'new vscode.'
     })
@@ -171,7 +172,7 @@ def test_all_tools_detailed():
     print_section("3. GET_DEFINITION - Jump to Definition")
     # Test on logger import (using proper 0-based line numbers)
     definition = call_mcp_tool("get_definition", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": 1,  # Line 2 in file (0-indexed as 1): import { logger } from '../utils'
         "character": 10  # On 'logger'
     })
@@ -195,7 +196,7 @@ def test_all_tools_detailed():
     # Test 4: REFERENCES
     print_section("4. GET_REFERENCES - Find All Usages")
     references = call_mcp_tool("get_references", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": 2,  # import { logger }
         "character": 10  # On 'logger'
     })
@@ -234,7 +235,7 @@ def test_all_tools_detailed():
     # Test 5: IMPLEMENTATIONS
     print_section("5. FIND_IMPLEMENTATIONS - Interface Implementations")
     implementations = call_mcp_tool("find_implementations", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/errors.ts",
+        "uri": get_test_uri('errors'),
         "line": 5,  # export class LSPError extends Error
         "character": 32  # On 'Error'
     })
@@ -260,7 +261,7 @@ def test_all_tools_detailed():
     # Test 6: DOCUMENT SYMBOLS
     print_section("6. GET_DOCUMENT_SYMBOLS - File Structure")
     doc_symbols = call_mcp_tool("get_document_symbols", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/tools.ts"
+        "uri": get_test_uri('tools')
     })
     
     if doc_symbols:
@@ -374,7 +375,7 @@ def test_all_tools_detailed():
     
     # First get exact position of getHover function
     doc_symbols_hover = call_mcp_tool("get_document_symbols", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts"
+        "uri": get_test_uri('hover')
     })
     
     hover_line = 12  # Default fallback
@@ -386,7 +387,7 @@ def test_all_tools_detailed():
     
     # Test incoming calls
     call_hierarchy_in = call_mcp_tool("get_call_hierarchy", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": hover_line,
         "character": 17,  # On 'getHover'
         "direction": "incoming"
@@ -426,7 +427,7 @@ def test_all_tools_detailed():
     # Test outgoing calls from addLspTools
     print("\n  OUTGOING calls from addLspTools:")
     call_hierarchy_out = call_mcp_tool("get_call_hierarchy", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/tools.ts",
+        "uri": get_test_uri('tools'),
         "line": 19,  # addLspTools function
         "character": 17,
         "direction": "outgoing"
@@ -461,7 +462,7 @@ def test_all_tools_detailed():
     # Test 9: RENAME
     print_section("9. RENAME_SYMBOL - Refactor Across Files")
     rename = call_mcp_tool("rename_symbol", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": 14,  # function parameter 'uri'
         "character": 3,
         "newName": "documentUri"
@@ -491,7 +492,7 @@ def test_all_tools_detailed():
     # First, trigger a large response that should be buffered
     print("\n  Testing buffered response with large document symbols...")
     large_doc_symbols = call_mcp_tool("get_document_symbols", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/buffer-manager.ts"
+        "uri": get_test_uri('buffer_manager')
     })
     
     if large_doc_symbols:

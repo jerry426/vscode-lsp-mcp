@@ -74,21 +74,48 @@ export async function ensureLspActivated(uri: string): Promise<void> {
     return
   }
 
+  // Check if the language is even registered in VSCode
+  const registeredLanguages = await vscode.languages.getLanguages()
+  if (!registeredLanguages.includes(language)) {
+    return
+  }
+
+  // Check if any document of this language is already open
+  const openDocsOfLanguage = vscode.workspace.textDocuments.filter((doc) => {
+    const docLanguage = detectLanguage(doc.uri.toString())
+    return docLanguage === language || doc.languageId === language
+  })
+
+  if (openDocsOfLanguage.length > 0) {
+    activatedLanguages.add(language)
+    return
+  }
+
   // Try to open the requested file first
   try {
     const parsedUri = vscode.Uri.parse(uri)
     const doc = await vscode.workspace.openTextDocument(parsedUri)
     activatedLanguages.add(language)
 
-    // Optionally show the document briefly to ensure LSP activation
-    // This is done in the background and won't affect the user
+    // Check if this document is already open in a tab
+    const isAlreadyOpen = vscode.workspace.textDocuments.some(d => d.uri.toString() === parsedUri.toString())
+
+    if (isAlreadyOpen) {
+      activatedLanguages.add(language)
+      return
+    }
+
+    // Show the document briefly to ensure LSP activation
     await vscode.window.showTextDocument(doc, {
       preview: false,
       preserveFocus: true,
       viewColumn: vscode.ViewColumn.Beside,
     })
 
-    // Close it immediately if it wasn't already open
+    // Add a small delay to ensure LSP has time to activate
+    await new Promise(resolve => setTimeout(resolve, 200))
+
+    // Close it immediately since it wasn't already open
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
 
     return
@@ -118,6 +145,7 @@ export async function ensureLspActivated(uri: string): Promise<void> {
           viewColumn: vscode.ViewColumn.Beside,
         })
 
+        await new Promise(resolve => setTimeout(resolve, 200))
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
 
         return

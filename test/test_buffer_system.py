@@ -7,6 +7,7 @@ import requests
 import json
 import time
 from typing import Dict, Any, Optional
+from test_utils import get_test_uri
 
 def call_mcp_tool(tool_name: str, arguments: Dict[str, Any]) -> Optional[Any]:
     """Call an MCP tool and parse the response"""
@@ -90,7 +91,7 @@ def test_buffer_system():
     print("-"*60)
     
     small_response = call_mcp_tool("get_hover", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": 2,
         "character": 10
     })
@@ -110,7 +111,7 @@ def test_buffer_system():
     print("-"*60)
     
     large_response = call_mcp_tool("get_document_symbols", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/buffer-manager.ts"
+        "uri": get_test_uri('buffer_manager')
     })
     
     if large_response:

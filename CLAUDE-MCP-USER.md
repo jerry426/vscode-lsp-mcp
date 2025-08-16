@@ -230,6 +230,13 @@ RIGHT ✅:
 - **Parameters**: None required
 - **Note**: This is the single source of truth for tool usage
 
+### get_supported_languages 🆕
+- **Purpose**: Get all languages registered in VSCode and their current status
+- **Use when**: Need to understand available language support or debug LSP issues
+- **Returns**: Total languages, active languages in workspace, languages by category
+- **Parameters**: None required
+- **Note**: Shows which languages have potential LSP support and which are currently active
+
 ## Decision Tree
 
 ```

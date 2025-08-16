@@ -316,6 +316,20 @@ export function addLspTools(server: McpServer) {
   )
 
   server.registerTool(
+    'get_supported_languages',
+    {
+      title: 'Get Supported Languages',
+      description: 'Get a list of all languages registered in VSCode, organized by category (programming, web, data, etc.). Also shows which languages are currently active in the workspace.',
+      inputSchema: {},
+    },
+    async () => {
+      const { getSupportedLanguages } = await import('../lsp/supported-languages')
+      const result = await getSupportedLanguages()
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    },
+  )
+
+  server.registerTool(
     'get_instructions',
     {
       title: 'Get Usage Instructions',

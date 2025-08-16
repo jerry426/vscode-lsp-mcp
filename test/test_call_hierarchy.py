@@ -3,6 +3,7 @@
 
 import json
 import requests
+from test_utils import get_test_uri
 
 def call_mcp_tool(tool_name, arguments):
     """Call an MCP tool and parse the response"""
@@ -71,7 +72,7 @@ def test_call_hierarchy():
     print("-" * 50)
     
     result = call_mcp_tool("get_call_hierarchy", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/hover.ts",
+        "uri": get_test_uri('hover'),
         "line": 13,  # getHover function definition
         "character": 10,
         "direction": "incoming"
@@ -109,7 +110,7 @@ def test_call_hierarchy():
     print("-" * 50)
     
     result = call_mcp_tool("get_call_hierarchy", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/mcp/tools.ts",
+        "uri": get_test_uri('tools'),
         "line": 19,  # addLspTools function
         "character": 17,
         "direction": "outgoing"
@@ -140,7 +141,7 @@ def test_call_hierarchy():
     print("-" * 50)
     
     result = call_mcp_tool("get_call_hierarchy", {
-        "uri": "file:///home/jerry/VSCode/vscode-lsp-mcp/src/lsp/errors.ts",
+        "uri": get_test_uri('errors'),
         "line": 88,  # withErrorHandling function
         "character": 27,
         "direction": "incoming"

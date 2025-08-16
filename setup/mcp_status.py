@@ -102,11 +102,9 @@ def display_dashboard():
             claude_config = json.loads(claude_config_path.read_text())
             for project_config in claude_config.get("projects", {}).values():
                 mcp_servers = project_config.get("mcpServers", {})
-                # Check for both old and new names for compatibility
+                # Check for token-saver in MCP servers
                 if "token-saver" in mcp_servers:
                     url = mcp_servers["token-saver"].get("url", "")
-                elif "vscode-lsp" in mcp_servers:
-                    url = mcp_servers["vscode-lsp"].get("url", "")
                     if "http://" in url:
                         claude_configured_port = int(url.split(":")[-1].replace("/mcp", ""))
                         break
