@@ -24,7 +24,7 @@ Token Saver MCP bridges Language Server Protocol (LSP) with Model Context Protoc
 ## Proven Results
 
 - ⚡ **100-1000x faster** than text-based searching
-- 🎯 **12 production-ready tools** 
+- 🎯 **17 production-ready tools** 
 - 🛡️ **Intelligent buffer protection** prevents token overflow
 - 🔄 **Zero configuration** for single projects
 
@@ -99,17 +99,28 @@ The results speak for themselves - typically **100-1000x faster** with **90-99% 
 
 ## Features
 
-This extension exposes VSCode's Language Server Protocol features through MCP, providing AI assistants with **12 powerful tools**:
+This extension exposes VSCode's Language Server Protocol features through MCP, providing AI assistants with **17 powerful tools**:
 
-- **Code Completions** (`get_completions`) - Get intelligent code suggestions at any position
-- **Hover Information** (`get_hover`) - Access documentation and type information  
+### Core Navigation & Intelligence
 - **Go to Definition** (`get_definition`) - Navigate to symbol definitions
+- **Go to Type Definition** (`get_type_definition`) - Navigate to type definitions
 - **Find References** (`get_references`) - Locate all usages of a symbol
 - **Find Implementations** (`find_implementations`) - Find all implementations of an interface/class
+- **Hover Information** (`get_hover`) - Access documentation and type information
+
+### Code Analysis & Refactoring
+- **Code Completions** (`get_completions`) - Get intelligent code suggestions at any position
+- **Code Actions** (`get_code_actions`) - Get available quick fixes and refactorings
+- **Symbol Rename** (`rename_symbol`) - Refactor symbols across the workspace
 - **Document Symbols** (`get_document_symbols`) - Get file structure with all symbols hierarchically
 - **Call Hierarchy** (`get_call_hierarchy`) - Trace incoming/outgoing function calls
-- **Symbol Rename** (`rename_symbol`) - Refactor symbols across the workspace
+
+### Diagnostics & Search
+- **Diagnostics** (`get_diagnostics`) - Get errors, warnings, and hints for files
 - **Text Search** (`search_text`) - Search for text patterns across all files
+- **Semantic Tokens** (`get_semantic_tokens`) - Get detailed syntax highlighting information
+
+### System & Utilities
 - **Buffer Retrieval** (`retrieve_buffer`) - Retrieve full data from buffered responses
 - **Buffer Statistics** (`get_buffer_stats`) - Monitor buffer system usage
 - **Get Instructions** (`get_instructions`) - Self-documenting API returns complete usage guide
@@ -238,6 +249,26 @@ Returns: Context-aware code completion suggestions
 ```
 Returns: Location(s) where the symbol is defined
 
+#### `get_type_definition`
+```json
+{
+  "uri": "file:///path/to/file.ts",
+  "line": 10,
+  "character": 15
+}
+```
+Returns: Location(s) where the type is defined
+
+#### `get_code_actions`
+```json
+{
+  "uri": "file:///path/to/file.ts",
+  "line": 10,
+  "character": 15
+}
+```
+Returns: Available quick fixes and refactorings at the position
+
 #### `get_references`
 ```json
 {
@@ -306,6 +337,24 @@ Returns: Hierarchical structure of all symbols in the file (classes, methods, pr
 ```
 Returns: File locations and positions matching the search
 
+### Diagnostics Tools
+
+#### `get_diagnostics`
+```json
+{
+  "uri": "file:///path/to/file.ts"  // Optional - if not provided, gets all diagnostics
+}
+```
+Returns: Errors, warnings, and hints for the file(s)
+
+#### `get_semantic_tokens`
+```json
+{
+  "uri": "file:///path/to/file.ts"
+}
+```
+Returns: Detailed syntax highlighting information with token types and modifiers
+
 ### Buffer Management Tools
 
 #### `retrieve_buffer`
@@ -362,10 +411,14 @@ Expected output:
 ✓ Text search works - found 6 match(es)
 ✓ Call hierarchy works - target: startMcp, 2 call(s)
 ✓ Rename works - would affect 2 file(s)
+✓ Type definition works - found 1 location(s)
+✓ Code actions works - found 3 quick fix(es)
+✓ Diagnostics works - found issues in 2 file(s)
+✓ Semantic tokens works - 500+ tokens decoded
 ✓ Buffer system works - response buffered (8744 tokens)
 ✓ retrieve_buffer works - retrieved 21 items
 ✓ Buffer stats works - 3 active buffer(s)
-🎉 SUCCESS! All 12 tools are working!
+🎉 SUCCESS! All 17 tools are working!
 ```
 
 ## Architecture
@@ -440,19 +493,6 @@ src/
 └── utils/
     └── index.ts      # Logging utilities
 ```
-
-## Roadmap
-
-### High Priority
-- [x] `find_implementations` - Find all implementations of an interface ✅ (v0.0.6)
-- [x] `get_document_symbols` - Get file outline/structure ✅ (v0.0.10)
-- [x] `get_call_hierarchy` - Trace function calls ✅ (v0.0.11)
-- [ ] `get_type_definition` - Navigate to type definitions
-
-### Medium Priority
-- [ ] `get_code_actions` - Get available quick fixes
-- [ ] `get_diagnostics` - Get errors/warnings
-- [ ] `get_semantic_tokens` - Semantic highlighting info
 
 ## Troubleshooting
 

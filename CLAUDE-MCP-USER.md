@@ -53,13 +53,17 @@ This shows all running MCP servers with their workspace paths. Use the URL for y
 |------|------------------|-------------------|
 | **Search for any symbol/text** | `search_text` | ❌ Don't grep for text patterns |
 | Find where a function/variable/class is defined | `get_definition` | ❌ Don't grep for "function name" |
+| Find where a type is defined | `get_type_definition` | ❌ Don't search for type definitions |
 | Find all places where something is used | `get_references` | ❌ Don't grep for text matches |
 | Find implementations of an interface/class | `find_implementations` | ❌ Don't grep for "implements" |
 | Understand file structure/symbols | `get_document_symbols` | ❌ Don't manually parse files |
 | Trace function calls (who calls/called by) | `get_call_hierarchy` | ❌ Don't grep for function calls |
+| Check for errors/warnings | `get_diagnostics` | ❌ Don't parse compiler output |
+| Get quick fixes for errors | `get_code_actions` | ❌ Don't manually fix issues |
 | Understand what a symbol is/does | `get_hover` | ❌ Don't read multiple files |
 | Get code suggestions at a position | `get_completions` | ❌ Don't guess what's available |
 | Rename a symbol throughout codebase | `rename_symbol` | ❌ Don't find/replace text |
+| Get syntax highlighting info | `get_semantic_tokens` | ❌ Don't parse syntax manually |
 
 ### Why MCP Tools Are Superior
 
@@ -130,6 +134,14 @@ RIGHT ✅:
 }
 ```
 - `get_document_symbols` - Get all symbols in a file (classes, methods, properties)
+- `get_semantic_tokens` - Get syntax highlighting tokens for a file
+
+```json
+{
+  "uri": "file:///absolute/path/to/file.ts"  // Optional - omit for all files
+}
+```
+- `get_diagnostics` - Get errors/warnings (URI is optional)
 
 ### Tools that DO need precise location:
 
@@ -141,9 +153,11 @@ RIGHT ✅:
 }
 ```
 - `get_definition` - Needs position of symbol
+- `get_type_definition` - Needs position of symbol  
 - `get_references` - Needs position of symbol
 - `get_hover` - Needs position to hover over
 - `get_completions` - Needs cursor position
+- `get_code_actions` - Needs position for available actions
 - `rename_symbol` - Needs position of symbol to rename
 - `find_implementations` - Needs position of interface/class
 - `get_call_hierarchy` - Needs position of function + direction
@@ -174,6 +188,11 @@ RIGHT ✅:
 - **Use when**: You need to find the source/implementation
 - **Returns**: Location(s) where the symbol is defined
 
+### get_type_definition 🆕
+- **Purpose**: Navigate to type definitions
+- **Use when**: You need to find where a type is defined (interfaces, classes, types)
+- **Returns**: Location(s) where the type is defined
+
 ### get_references
 - **Purpose**: Find ALL places where something is used
 - **Use when**: Understanding impact, refactoring, or tracing usage
@@ -188,6 +207,11 @@ RIGHT ✅:
 - **Purpose**: Get context-aware code suggestions
 - **Use when**: Need to know available methods/properties
 - **Returns**: List of valid completions at position
+
+### get_code_actions 🆕
+- **Purpose**: Get available quick fixes and refactorings
+- **Use when**: Need to fix errors, apply suggestions, or refactor code
+- **Returns**: Available code actions (quick fixes, refactorings) at the position
 
 ### rename_symbol
 - **Purpose**: Safely rename across entire codebase
@@ -210,6 +234,18 @@ RIGHT ✅:
 - **Use when**: Understanding call flow, impact analysis
 - **Returns**: Incoming calls (callers) or outgoing calls (callees)
 - **Parameters**: Needs position + direction ("incoming" or "outgoing")
+
+### get_diagnostics 🆕
+- **Purpose**: Get errors, warnings, and hints for files
+- **Use when**: Need to check for code issues, compilation errors, or linting problems
+- **Returns**: Diagnostics with severity, message, source, and location
+- **Parameters**: Optional URI - if not provided, gets diagnostics for all files
+
+### get_semantic_tokens 🆕
+- **Purpose**: Get detailed syntax highlighting information
+- **Use when**: Need to understand semantic token types and modifiers in code
+- **Returns**: Decoded tokens with line, character, length, token type and modifiers
+- **Parameters**: File URI required
 
 ### retrieve_buffer
 - **Purpose**: Retrieve full data from a buffered response

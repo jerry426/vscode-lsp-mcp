@@ -2,12 +2,16 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import {
   getCallHierarchy,
+  getCodeActions,
   getCompletions,
   getDefinition,
+  getDiagnostics,
   getDocumentSymbols,
   getHover,
   getImplementations,
   getReferences,
+  getSemanticTokens,
+  getTypeDefinition,
   rename,
   searchText,
 } from '../lsp'
@@ -68,6 +72,104 @@ export function addLspTools(server: McpServer) {
     async ({ uri, line, character }) => {
       const result = await getDefinition(uri, line, character)
       return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_type_definition',
+    {
+      title: 'Get Type Definition',
+      description: 'Get the type definition location of a symbol.',
+      inputSchema: {
+        uri: z.string().describe(uriDesc),
+        line: z.number().describe('The line number (0-based).'),
+        character: z.number().describe('The character position (0-based).'),
+      },
+    },
+    async ({ uri, line, character }) => {
+      const result = await getTypeDefinition(uri, line, character)
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_code_actions',
+    {
+      title: 'Get Code Actions',
+      description: 'Get available code actions (quick fixes, refactorings) at a given position.',
+      inputSchema: {
+        uri: z.string().describe(uriDesc),
+        line: z.number().describe('The line number (0-based).'),
+        character: z.number().describe('The character position (0-based).'),
+      },
+    },
+    async ({ uri, line, character }) => {
+      const result = await getCodeActions(uri, line, character)
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_diagnostics',
+    {
+      title: 'Get Diagnostics',
+      description: 'Get diagnostics (errors, warnings, info, hints) for a file or all files.',
+      inputSchema: {
+        uri: z.string().optional().describe('Optional file URI to get diagnostics for. If not provided, gets diagnostics for all files.'),
+      },
+    },
+    async ({ uri }) => {
+      const result = await getDiagnostics(uri)
+
+      // Apply buffering if needed (diagnostics for all files can be large)
+      const bufferedResponse = bufferResponse('get_diagnostics', result)
+
+      if (bufferedResponse.metadata) {
+        logger.info(`Diagnostics returned buffered response: ${bufferedResponse.metadata.totalTokens} tokens`)
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              type: 'buffered_response',
+              ...bufferedResponse,
+            }, null, 2),
+          }],
+        }
+      }
+
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
+    },
+  )
+
+  server.registerTool(
+    'get_semantic_tokens',
+    {
+      title: 'Get Semantic Tokens',
+      description: 'Get semantic tokens (detailed syntax highlighting) for a document.',
+      inputSchema: {
+        uri: z.string().describe(uriDesc),
+      },
+    },
+    async ({ uri }) => {
+      const result = await getSemanticTokens(uri)
+
+      // Apply buffering as semantic tokens can be very large
+      const bufferedResponse = bufferResponse('get_semantic_tokens', result)
+
+      if (bufferedResponse.metadata) {
+        logger.info(`Semantic tokens returned buffered response: ${bufferedResponse.metadata.totalTokens} tokens`)
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              type: 'buffered_response',
+              ...bufferedResponse,
+            }, null, 2),
+          }],
+        }
+      }
+
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] }
     },
   )
 
