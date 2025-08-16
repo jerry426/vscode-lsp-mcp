@@ -213,7 +213,7 @@ This shows which ports are actually in use and their workspace paths.
 
 ## Available MCP Tools
 
-> **Important:** The Language Server for each language must be activated first. Open at least one file of that language type (e.g., `.ts`, `.py`, `.go`) in VSCode to activate its Language Server. Once activated, the MCP tools can work with any file of that type in your workspace, even if they're not currently open.
+> **Automatic Language Server Activation:** The extension automatically activates the appropriate Language Server when you use any MCP tool. No manual file opening required - just call the tool and it works instantly! If a Language Server isn't already active, the extension will very briefly open and close a file of that type in the background to trigger activation. This happens automatically and takes just milliseconds.
 
 ### Position-Based Tools
 
@@ -443,8 +443,8 @@ Expected output:
 ```
 
 Key design principles:
-- **Language Server activation**: Open one file of each language type to activate its LSP
-- **Workspace-wide access**: Once LSP is active, all files of that type are accessible
+- **Automatic Language Server activation**: The extension automatically activates Language Servers as needed
+- **Workspace-wide access**: All files are immediately accessible without manual activation
 - **Session management**: Each MCP client gets an isolated session
 - **Consistent formatting**: All responses return JSON-serialized data
 - **Error resilience**: Graceful handling of missing files or invalid positions
@@ -512,7 +512,7 @@ echo "9527" > .lsp_mcp_port
 
 **MCP tools not responding?**
 - Ensure VSCode has the workspace open
-- **Open at least one file of the target language** to activate its Language Server
+- **Language Servers are automatically activated** when you use any MCP tool
 - Check extension is enabled in settings (`lsp-mcp.enabled`)
 - Verify the MCP server is running on the expected port
 
